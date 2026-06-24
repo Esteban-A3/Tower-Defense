@@ -114,3 +114,55 @@ class Unidad(ABC):
     def __repr__(self):
         estado = "viva" if self.esta_viva() else "eliminada"
         return f"{self.nombre}({estado}, {self.vida_actual}hp)"
+
+
+# Umbral de vida para activar recuperación del Tanque
+UMBRAL_RECUPERACION = 0.25   # 25% de la vida máxima
+
+
+#Tanque
+
+class Tanque(Unidad):
+    """
+    Unidad pesada que avanza directamente hacia la base central
+    destruyendo todo lo que encuentre en su camino.
+    """
+
+    STATS = {
+        "vida_maxima":          90,   # el más resistente de las tres unidades
+        "daño":                 30,   # daño medio-alto al atacar cuerpo a cuerpo
+        "velocidad":             1,   # solo 1 casilla por turno
+        "alcance":               1,   # cuerpo a cuerpo, necesita estar adyacente
+        "costo":                 0,   # TODO: conectar con economía
+        "turnos_para_habilidad": 5,   # curación extra cada 5 turnos
+    }
+
+    CURACION_POR_TURNO = 6    # vida que recupera cada turno mientras está detenido
+    CURACION_HABILIDAD = 20   # curación puntual cuando activa la habilidad
+
+    # Qué objetivo prioriza el motor de combate al moverlo
+    PRIORIDAD_MOVIMIENTO = "base"   # siempre avanza hacia la base central
+
+    def __init__(self):
+        super().__init__(nombre="Tanque", **self.STATS)
+
+    def avanzar_turno(self, contexto):
+        """
+        Antes de avanzar el contador de habilidad, revisamos si la unidad
+        debe entrar o salir del estado de recuperación de emergencia.
+        """
+        # Recuperacion de emergencia: si la vida baja del umbral, se detiene y se cura
+        if self.vida_actual < self.vida_maxima * UMBRAL_RECUPERACION:
+            # Entramos (o seguimos) en modo recuperación
+            self.en_recuperacion = True
+            self.curar(self.CURACION_POR_TURNO)
+            contexto["log"] = (
+                f"{self.nombre} en recuperación: "
+                f"+{self.CURACION_POR_TURNO} vida → {self.vida_actual}hp"
+            )
+        else:
+            # Vida por encima del umbral: retomamos el avance
+            self.en_recuperacion = False
+
+        #Habilidad especial
+        super().avanzar_turno(contexto)
