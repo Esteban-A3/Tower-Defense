@@ -255,3 +255,37 @@ class TorreSanadora(Torre):
             f"{self.nombre} lanza pulso de curación: "
             f"+{self.CURACION_HABILIDAD} vida a {len(torres_curadas)} torre(s)"
         )
+
+class Muro:
+    """
+    Obstáculo físico en la cuadrícula.
+    """
+
+    # Estadísticas base 
+    VIDA_MAXIMA = 60    # más resistente que una Torre Vigía, menos que un Cañón
+    COSTO = 0           # Conectar con economía 
+
+    def __init__(self):
+        self.nombre = "Muro"
+        self.vida_maxima = self.VIDA_MAXIMA
+        self.vida_actual = self.VIDA_MAXIMA
+        self.costo = self.COSTO
+
+        # Posición en el mapa (asignada al colocarlo)
+        self.fila = None
+        self.columna = None
+
+    def recibir_daño(self, cantidad):
+        """Reduce la vida del muro. Nunca baja de 0."""
+        self.vida_actual = max(0, self.vida_actual - cantidad)
+
+    def esta_vivo(self):
+        """Devuelve False cuando el muro ha sido destruido completamente."""
+        return self.vida_actual > 0
+
+    def resumen(self):
+        return f"[Muro] Vida: {self.vida_actual}/{self.vida_maxima}"
+
+    def __repr__(self):
+        estado = "en pie" if self.esta_vivo() else "destruido"
+        return f"Muro({estado}, {self.vida_actual}hp)"
