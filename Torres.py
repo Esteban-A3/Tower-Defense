@@ -104,7 +104,6 @@ class Torre(ABC):
         estado = "viva" if self.esta_viva() else "destruida"
         return f"{self.nombre}({estado}, {self.vida_actual}hp)"
 
-
 # TORRE VIGÍA 
 
 class TorreVigia(Torre):
@@ -147,3 +146,46 @@ class TorreVigia(Torre):
             f"{primer_golpe} + {segundo_golpe} de daño"
         )
 
+#CAÑÓN
+
+class TorreCanon(Torre):
+    """
+    Torre de ataque pesado.
+    Vida alta y daño alto, pero lenta. Su habilidad especial inflige
+    daño en área a todas las unidades enemigas dentro de su alcance.
+    """
+
+    STATS = {
+        "vida_maxima":          85,   # muy resistente, difícil de destruir
+        "daño":                 40,   # el mayor daño individual del juego
+        "alcance":               3,   # alcance amplio para compensar la lentitud
+        "costo":                 0,   # Conectar con economía
+        "turnos_para_habilidad": 4,   # daño en área cada 4 turnos
+    }
+
+    def __init__(self):
+        super().__init__(
+            nombre="Torre Cañón",
+            **self.STATS
+        )
+
+    def activar_habilidad(self, contexto):
+        """
+        Disparo de área, inflige daño a todas las unidades enemigas
+        """
+        unidades = contexto.get("unidades_en_rango", [])
+        if not unidades:
+            return
+
+        daño_area = int(self.daño * 0.75)   # 75% del daño base = 30 pts
+        total_infligido = 0
+
+        for unidad in unidades:
+            daño_real = min(daño_area, unidad.vida_actual)
+            unidad.vida_actual -= daño_real
+            total_infligido += daño_real
+
+        contexto["log"] = (
+            f"{self.nombre} dispara explosión: {daño_area} dmg "
+            f"a {len(unidades)} unidad(es), total {total_infligido}"
+        )
