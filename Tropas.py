@@ -232,3 +232,56 @@ class Artilleria(Unidad):
             log += f" | {segundo.nombre} -{daño_real} (perforación)"
 
         contexto["log"] = log
+
+#Peon
+
+class Peon(Unidad):
+    """
+    Unidad de asalto rápido. Frágil y con poco daño individual,
+    pero su velocidad de 3 casillas por turno y su ataque doble
+    cada 2 turnos la hacen peligrosa en grupos numerosos.
+    """
+
+    STATS = {
+        "vida_maxima":          30,   # muy frágil, cae ante cualquier torre
+        "daño":                 10,   # daño bajo, compensado por la frecuencia
+        "velocidad":             3,   # 3 casillas por turno, el más rápido
+        "alcance":               1,   # cuerpo a cuerpo
+        "costo":                 0,   # TODO: conectar con economía
+        "turnos_para_habilidad": 2,   # ataque doble muy frecuente
+    }
+
+    PRIORIDAD_MOVIMIENTO = "libre"  # ataca lo que tenga más cerca
+    PRIORIDAD_ATAQUE = ["torre", "muro", "base"]
+
+    def __init__(self):
+        super().__init__(nombre="Peón", **self.STATS)
+
+    def activar_habilidad(self, contexto):
+        """
+        Golpea al objetivo principal dos veces.
+        Si el primero cae tras el primer golpe, el segundo golpe
+        se redirige al siguiente objetivo disponible en rango.
+        """
+        objetivos = contexto.get("objetivos_en_rango", [])
+
+        if not objetivos:
+            contexto["log"] = f"{self.nombre} no tiene objetivos para atacar doble"
+            return
+
+        objetivo = objetivos[0]
+        primer_golpe = self.atacar(objetivo)
+        log = f"{self.nombre} ataque doble: {objetivo.nombre} -{primer_golpe}"
+
+        if not objetivo.esta_viva() and len(objetivos) >= 2:
+            # Primer objetivo eliminado: redirigimos el segundo golpe
+            siguiente = objetivos[1]
+            segundo_golpe = self.atacar(siguiente)
+            log += f" (eliminado) → {siguiente.nombre} -{segundo_golpe}"
+        else:
+            # Primer objetivo sigue vivo: segundo golpe sobre el mismo
+            segundo_golpe = self.atacar(objetivo)
+            log += f" + -{segundo_golpe}"
+
+        contexto["log"] = log
+        
