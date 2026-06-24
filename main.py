@@ -3,6 +3,7 @@ import pygame
 import json
 import hashlib
 import os
+import random
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 pygame.mixer.init()
 
@@ -14,7 +15,7 @@ pygame.mixer.init()
 #              ventanas y clases del programa.
 # -----------------------------------------------------------------
 
-# ── Paleta de colores medieval oscura ──
+#Paleta de colores
 COLOR_FONDO         = "#0d0a07"
 COLOR_PIEDRA        = "#1a1510"
 COLOR_PIEDRA_2      = "#221c14"
@@ -27,7 +28,7 @@ COLOR_SEPARADOR     = "#3a2e1e"
 COLOR_ENTRY_FONDO   = "#140f09"
 COLOR_ENTRY_BORDE   = "#4a3820"
 
-# ── Tipografías ──
+#Tipografías
 FUENTE_TITULO    = ("Georgia", 48, "bold")
 FUENTE_SUBTITULO = ("Georgia", 13, "italic")
 FUENTE_BOTON     = ("Courier", 14, "bold")
@@ -40,7 +41,6 @@ FUENTE_ENTRY     = ("Courier", 13)
 # SECCIÓN 1 — UTILIDADES
 # Clase con funciones compartidas por todas las pantallas:
 # fondo, parpadeo, hover y música.
-# 
 class Utilidades:
 
     # Fondo 
@@ -88,8 +88,7 @@ class Utilidades:
     # Música
     def tocar_musica_menu(self, estado_musica):
         # Carga y reproduce la música del menú en loop si no está ya sonando
-        ruta = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                            "assets", "musica", "menu.mp3")
+        ruta = os.path.join(os.path.dirname(os.path.abspath(__file__)),"Sound", "Menu", "Tower0.mp3")
         if estado_musica["actual"] != "menu" and os.path.exists(ruta):
             pygame.mixer.music.stop()
             pygame.mixer.music.load(ruta)
@@ -97,6 +96,22 @@ class Utilidades:
             estado_musica["actual"]  = "menu"
             estado_musica["activa"]  = True
             estado_musica["pausada"] = False
+
+    def tocar_musica_juego(self, estado_musica):
+        # Carga y reproduce en loop una pista aleatoria de las 3 disponibles
+        # para la fase de partida (construcción + combate)
+        carpeta = os.path.join(os.path.dirname(os.path.abspath(__file__)),"Sound", "in_game")
+        pistas  = ["Tower1.mp3", "Tower2.mp3", "Tower3.mp3"]
+
+        if estado_musica["actual"] != "juego":
+            ruta = os.path.join(carpeta, random.choice(pistas))
+            if os.path.exists(ruta):
+                pygame.mixer.music.stop()
+                pygame.mixer.music.load(ruta)
+                pygame.mixer.music.play(-1)
+                estado_musica["actual"]  = "juego"
+                estado_musica["activa"]  = True
+                estado_musica["pausada"] = False
 
     def alternar_musica(self, estado_musica):
         # Pausa o reanuda la música según el estado actual
@@ -120,7 +135,6 @@ class Utilidades:
 # SECCIÓN 2 — GESTOR DE USUARIOS
 # Clase que maneja toda la lógica de registro, login y ranking.
 # Lee y escribe en un archivo JSON. No depende de Tkinter.
-
 class GestorUsuarios:
     ARCHIVO = "usuarios.json"
 
@@ -199,7 +213,6 @@ class GestorUsuarios:
 
 # SECCIÓN 3 — PANTALLA INTRO
 # Pantalla de inicio del juego: "presiona cualquier tecla".
-
 class PantallaIntro:
 
     def __init__(self, ventana, utils, estado_musica, ir_a_login):
@@ -295,7 +308,6 @@ class PantallaIntro:
 
 # SECCIÓN 4 — PANTALLA LOGIN
 # Formulario de inicio de sesión y registro de usuarios.
-
 class PantallaLogin:
 
     def __init__(self, ventana, utils, gestor, ir_a_menu):
@@ -534,12 +546,116 @@ class PantallaMenu:
         nuevo_texto = "♪  MÚSICA" if self.estado_musica["activa"] else "✕  MÚSICA"
         self._btn_musica.config(text=nuevo_texto)
 
+# -----------------------------------------------------------------
+# SECCIÓN 6 — PANTALLA MEJORES PUNTUACIONES
+# Muestra los dos rankings (top 5 defensores y top 5 atacantes)
+# usando GestorUsuarios.obtener_ranking().
+# -----------------------------------------------------------------
+class PantallaTop:
 
+    def __init__(self, ventana, utils, gestor, estado_musica, ir_a_menu):
+        self.ventana       = ventana
+        self.utils         = utils
+        self.gestor        = gestor          # instancia de GestorUsuarios
+        self.estado_musica = estado_musica
+        self.ir_a_menu      = ir_a_menu      # callback para volver al menú
+
+    def mostrar(self):
+        # Limpia la ventana y construye la pantalla
+        for widget in self.ventana.winfo_children():
+            widget.destroy()
+
+        ancho = 900
+        alto  = 620
+
+        # ── Canvas de fondo ──
+        canvas = tk.Canvas(self.ventana, width=ancho, height=alto,
+                           bg=COLOR_FONDO, highlightthickness=0)
+        canvas.place(x=0, y=0)
+        self.utils.dibujar_fondo_piedra(canvas, ancho, alto)
+        canvas.create_rectangle(0, 0, ancho, alto,
+                                 fill=COLOR_FONDO, stipple="gray50", outline="")
+        self.utils.borde_dorado(canvas, ancho, alto)
+
+        # Paneles de los dos rankings (simulados con rectángulos en el canvas)
+        canvas.create_rectangle(70, 140, 430, 500,
+                                 fill=COLOR_PIEDRA, outline=COLOR_SEPARADOR, width=2)
+        canvas.create_rectangle(72, 142, 428, 498,
+                                 fill="", outline=COLOR_ORO, width=1)
+
+        canvas.create_rectangle(470, 140, 830, 500,
+                                 fill=COLOR_PIEDRA, outline=COLOR_SEPARADOR, width=2)
+        canvas.create_rectangle(472, 142, 828, 498,
+                                 fill="", outline=COLOR_ORO, width=1)
+
+        # ── Título ──
+        tk.Label(self.ventana, text="🏆  MEJORES PUNTUACIONES  🏆",
+                 bg=COLOR_FONDO, fg=COLOR_ORO,
+                 font=("Georgia", 24, "bold")).place(relx=0.5, y=70, anchor="center")
+
+        tk.Label(self.ventana, text="━━━━━━━  ✦  ━━━━━━━",
+                 bg=COLOR_FONDO, fg=COLOR_SEPARADOR,
+                 font=("Courier", 12)).place(relx=0.5, y=108, anchor="center")
+
+        # ── Construye cada panel de ranking ──
+        self._construir_panel(x_centro=250, rol="defensor",
+                              titulo="⚔  TOP DEFENSORES", icono="🛡")
+        self._construir_panel(x_centro=650, rol="atacante",
+                              titulo="⚔  TOP ATACANTES", icono="⚔")
+
+        # ── Botón volver ──
+        btn_volver = self.utils.boton_medieval(self.ventana, "←  VOLVER AL MENÚ",
+                                               self.ir_a_menu, COLOR_TEXTO)
+        btn_volver.place(relx=0.5, y=555, anchor="center")
+
+        # ── Pie de página ──
+        tk.Label(self.ventana,
+                 text="ITCR  ·  Introducción a la Programación  ·  2026",
+                 bg=COLOR_FONDO, fg=COLOR_TEXTO_TENUE,
+                 font=FUENTE_PEQUENA).place(relx=0.5, rely=0.97, anchor="center")
+
+    def _construir_panel(self, x_centro, rol, titulo, icono):
+        # Construye un panel de ranking (lista de 5 jugadores) centrado en x_centro
+        ranking = self.gestor.obtener_ranking(rol, cantidad=5)
+
+        # Título del panel
+        tk.Label(self.ventana, text=titulo,
+                 bg=COLOR_PIEDRA, fg=COLOR_ORO_BRILLANTE,
+                 font=("Georgia", 14, "bold")).place(x=x_centro, y=165, anchor="center")
+
+        tk.Label(self.ventana, text="─" * 24,
+                 bg=COLOR_PIEDRA, fg=COLOR_SEPARADOR,
+                 font=("Courier", 9)).place(x=x_centro, y=192, anchor="center")
+
+        if not ranking:
+            # Mensaje si todavía no hay datos registrados
+            tk.Label(self.ventana, text="Aún no hay jugadores registrados.",
+                     bg=COLOR_PIEDRA, fg=COLOR_TEXTO_TENUE,
+                     font=("Courier", 10, "italic")).place(x=x_centro, y=300, anchor="center")
+            return
+
+        # Medallas para los primeros 3 lugares, número simple para el resto
+        medallas = ["🥇", "🥈", "🥉"]
+
+        y = 225
+        for posicion, (nombre, victorias) in enumerate(ranking):
+            simbolo = medallas[posicion] if posicion < 3 else f"{posicion + 1}."
+
+            fila = tk.Frame(self.ventana, bg=COLOR_PIEDRA)
+            fila.place(x=x_centro, y=y, anchor="center")
+
+            tk.Label(fila, text=simbolo, bg=COLOR_PIEDRA, fg=COLOR_ORO,
+                     font=("Courier", 12, "bold"), width=3).pack(side="left")
+            tk.Label(fila, text=nombre, bg=COLOR_PIEDRA, fg=COLOR_TEXTO,
+                     font=("Courier", 12), width=14, anchor="w").pack(side="left")
+            tk.Label(fila, text=f"{victorias} {icono}", bg=COLOR_PIEDRA, fg=COLOR_TEXTO_TENUE,
+                     font=("Courier", 11), width=8, anchor="e").pack(side="left")
+
+            y += 50
 
 # INICIO DEL PROGRAMA
 # Aquí se crea la ventana, los servicios compartidos, y se navega
 # entre pantallas mediante callbacks.
-# 
 
 # Ventana principal
 ventana = tk.Tk()
@@ -578,8 +694,8 @@ def ir_a_jugar():
     # TODO: pantalla de selección de facción / partida
 
 def ir_a_top():
-    print("[DEBUG] Entrando a Mejores Puntuaciones")
-    # TODO: pantalla de ranking (usa gestor.obtener_ranking)
+    pantalla = PantallaTop(ventana, utils, gestor, estado_musica, ir_a_menu_actual)
+    pantalla.mostrar()
 
 def ir_a_como_jugar():
     print("[DEBUG] Entrando a Cómo Jugar")
@@ -588,6 +704,10 @@ def ir_a_como_jugar():
 def ir_a_cuenta():
     print("[DEBUG] Entrando a Cuenta")
     # TODO: pantalla de perfil / cerrar sesión
+
+def ir_a_menu_actual():
+    # Vuelve al menú principal usando el usuario ya logueado
+    ir_a_menu(usuario_actual)
 
 # ── Arrancar en la intro ──
 ir_a_intro()
