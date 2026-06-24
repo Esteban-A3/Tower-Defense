@@ -166,3 +166,69 @@ class Tanque(Unidad):
 
         #Habilidad especial
         super().avanzar_turno(contexto)
+
+    def activar_habilidad(self, contexto):
+        """
+        Pulso de recuperación: curación puntual independiente del ciclo
+        de emergencia. Se activa cada 5 turnos esté o no en recuperación.
+        """
+        vida_antes = self.vida_actual
+        self.curar(self.CURACION_HABILIDAD)
+        curado = self.vida_actual - vida_antes
+
+        contexto["log"] = (
+            f"{self.nombre} activa pulso de recuperación: "
+            f"+{curado} vida → {self.vida_actual}hp"
+        )
+
+#Artilleria
+
+class Artilleria(Unidad):
+    """
+    Unidad de rango medio que puede atacar torres y muros desde lejos
+    sin necesidad de estar cerca de ellos.
+    """
+
+    STATS = {
+        "vida_maxima":          55,   # vida media, ni frágil ni resistente
+        "daño":                 22,   # daño medio, equilibrado con su alcance
+        "velocidad":             2,   # 2 casillas por turno
+        "alcance":               4,   # puede atacar desde 4 casillas de distancia
+        "costo":                 0,   # TODO: conectar con economía
+        "turnos_para_habilidad": 4,   # disparo perforante cada 4 turnos
+    }
+
+    FACTOR_DAÑO_SECUNDARIO = 0.60   # el segundo objetivo recibe el 60% del daño
+
+    PRIORIDAD_MOVIMIENTO = "libre"  # avanza hacia lo que esté en rango
+    PRIORIDAD_ATAQUE = ["torre", "muro", "base"]
+
+    def __init__(self):
+        super().__init__(nombre="Artillería", **self.STATS)
+
+    def activar_habilidad(self, contexto):
+        """
+        Disparo perforante: impacta al primer objetivo en rango y,
+        si hay un segundo objetivo detrás (mismo eje), también lo daña
+        con el 60% del daño base.
+        """
+        objetivos = contexto.get("objetivos_en_rango", [])
+
+        if not objetivos:
+            contexto["log"] = f"{self.nombre} dispara pero no hay objetivos en rango"
+            return
+
+        # Primer impacto: daño completo
+        primero = objetivos[0]
+        daño_principal = self.atacar(primero)
+        log = f"{self.nombre} disparo perforante: {primero.nombre} -{daño_principal}"
+
+        # Segundo impacto: 60% del daño si hay otro objetivo detrás
+        if len(objetivos) >= 2:
+            segundo = objetivos[1]
+            daño_secundario = int(self.daño * self.FACTOR_DAÑO_SECUNDARIO)
+            daño_real = min(daño_secundario, segundo.vida_actual)
+            segundo.recibir_daño(daño_real)
+            log += f" | {segundo.nombre} -{daño_real} (perforación)"
+
+        contexto["log"] = log
