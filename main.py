@@ -325,11 +325,13 @@ class PantallaIntro:
 # Formulario de inicio de sesión y registro de usuarios.
 class PantallaLogin:
 
-    def __init__(self, ventana, utils, gestor, ir_a_menu):
+    def __init__(self, ventana, utils, gestor, numero_jugador, ir_a_continuar, nombre_excluido=None):
         self.ventana   = ventana
         self.utils     = utils    # instancia de Utilidades
         self.gestor    = gestor   # instancia de GestorUsuarios
-        self.ir_a_menu = ir_a_menu  # callback que recibe el usuario logueado
+        self.numero_jugador  = numero_jugador     # 1 o 2
+        self.ir_a_continuar  = ir_a_continuar     # callback que recibe el usuario logueado
+        self.nombre_excluido = nombre_excluido    # nombre del jugador que ya inició sesión
         self._modo     = "login"  # puede ser "login" o "registro"
 
     def mostrar(self):
@@ -341,18 +343,14 @@ class PantallaLogin:
         alto  = 620
 
         # Canvas de fondo
-        canvas = tk.Canvas(self.ventana, width=ancho, height=alto,
-                           bg=COLOR_FONDO, highlightthickness=0)
+        canvas = tk.Canvas(self.ventana, width=ancho, height=alto, bg=COLOR_FONDO, highlightthickness=0)
         canvas.place(x=0, y=0)
         self.utils.dibujar_fondo_piedra(canvas, ancho, alto)
-        canvas.create_rectangle(0, 0, ancho, alto,
-                                 fill=COLOR_FONDO, stipple="gray50", outline="")
+        canvas.create_rectangle(0, 0, ancho, alto,fill=COLOR_FONDO, stipple="gray50", outline="")
 
         # Panel del formulario (simulado con rectángulos en el canvas)
-        canvas.create_rectangle(250, 100, 650, 520,
-                                 fill=COLOR_PIEDRA, outline=COLOR_SEPARADOR, width=2)
-        canvas.create_rectangle(252, 102, 648, 518,
-                                 fill="", outline=COLOR_ORO, width=1)
+        canvas.create_rectangle(250, 100, 650, 520,fill=COLOR_PIEDRA, outline=COLOR_SEPARADOR, width=2)
+        canvas.create_rectangle(252, 102, 648, 518,fill="", outline=COLOR_ORO, width=1)
 
         self.utils.borde_dorado(canvas, ancho, alto)
 
@@ -363,10 +361,7 @@ class PantallaLogin:
         self._construir_formulario()
 
         # Pie de página
-        tk.Label(self.ventana,
-                 text="ITCR  ·  Introducción a la Programación  ·  2026",
-                 bg=COLOR_FONDO, fg=COLOR_TEXTO_TENUE,
-                 font=FUENTE_PEQUENA).place(relx=0.5, rely=0.97, anchor="center")
+        tk.Label(self.ventana,text="ITCR  ·  Introducción a la Programación  ·  2026",bg=COLOR_FONDO, fg=COLOR_TEXTO_TENUE,font=FUENTE_PEQUENA).place(relx=0.5, rely=0.97, anchor="center")
 
     def _construir_formulario(self):
         # Limpia el frame y reconstruye el formulario según el modo actual
@@ -375,69 +370,44 @@ class PantallaLogin:
 
         frame = self._frame
 
-        # Símbolo y título del panel
-        tk.Label(frame, text="⚜",
-                 bg=COLOR_PIEDRA, fg=COLOR_ORO,
-                 font=("Georgia", 20)).pack(pady=(16, 4))
+       # Etiqueta de turno: JUGADOR 1 / JUGADOR 2
+        color_jugador = COLOR_ORO_BRILLANTE if self.numero_jugador == 1 else COLOR_SANGRE
+        tk.Label(frame, text=f"⚜  JUGADOR {self.numero_jugador}  ⚜",bg=COLOR_PIEDRA, fg=color_jugador,font=("Georgia", 13, "bold")).pack(pady=(16, 2))
 
         titulo = "INICIO DE SESIÓN" if self._modo == "login" else "CREAR CUENTA"
-        tk.Label(frame, text=titulo,
-                 bg=COLOR_PIEDRA, fg=COLOR_ORO,
-                 font=("Georgia", 16, "bold")).pack(pady=(0, 4))
+        tk.Label(frame, text=titulo,bg=COLOR_PIEDRA, fg=COLOR_ORO,font=("Georgia", 16, "bold")).pack(pady=(0, 4))
 
         # Separador
-        tk.Label(frame, text="━━━━━━━  ✦  ━━━━━━━",
-                 bg=COLOR_PIEDRA, fg=COLOR_SEPARADOR,
-                 font=("Courier", 10)).pack(pady=(0, 20))
+        tk.Label(frame, text="━━━━━━━  ✦  ━━━━━━━", bg=COLOR_PIEDRA, fg=COLOR_SEPARADOR,font=("Courier", 10)).pack(pady=(0, 20))
 
         # Campo: nombre de usuario
-        tk.Label(frame, text="Nombre de Usuario",
-                 bg=COLOR_PIEDRA, fg=COLOR_TEXTO_TENUE,
-                 font=FUENTE_LABEL).pack(anchor="w", padx=30)
+        tk.Label(frame, text="Nombre de Usuario", bg=COLOR_PIEDRA, fg=COLOR_TEXTO_TENUE,font=FUENTE_LABEL).pack(anchor="w", padx=30)
 
-        self._entry_nombre = tk.Entry(
-            frame, bg=COLOR_ENTRY_FONDO, fg=COLOR_TEXTO,
-            font=FUENTE_ENTRY, relief=tk.FLAT, width=24,
-            insertbackground=COLOR_ORO,
-            highlightthickness=1, highlightcolor=COLOR_ORO,
-            highlightbackground=COLOR_ENTRY_BORDE
-        )
+        self._entry_nombre = tk.Entry(frame, bg=COLOR_ENTRY_FONDO, fg=COLOR_TEXTO,font=FUENTE_ENTRY, relief=tk.FLAT, width=24,insertbackground=COLOR_ORO,highlightthickness=1, highlightcolor=COLOR_ORO,
+            highlightbackground=COLOR_ENTRY_BORDE)
         self._entry_nombre.pack(padx=30, pady=(2, 14), ipady=6)
         self._entry_nombre.focus()
 
         # Campo: contraseña
-        tk.Label(frame, text="Contraseña",
-                 bg=COLOR_PIEDRA, fg=COLOR_TEXTO_TENUE,
-                 font=FUENTE_LABEL).pack(anchor="w", padx=30)
+        tk.Label(frame, text="Contraseña",bg=COLOR_PIEDRA, fg=COLOR_TEXTO_TENUE,font=FUENTE_LABEL).pack(anchor="w", padx=30)
 
-        self._entry_contrasena = tk.Entry(
-            frame, bg=COLOR_ENTRY_FONDO, fg=COLOR_TEXTO,
-            font=FUENTE_ENTRY, relief=tk.FLAT, width=24,
-            insertbackground=COLOR_ORO, show="•",
-            highlightthickness=1, highlightcolor=COLOR_ORO,
-            highlightbackground=COLOR_ENTRY_BORDE
-        )
+        self._entry_contrasena = tk.Entry(frame, bg=COLOR_ENTRY_FONDO, fg=COLOR_TEXTO,font=FUENTE_ENTRY, relief=tk.FLAT, width=24,insertbackground=COLOR_ORO, show="•",highlightthickness=1, highlightcolor=COLOR_ORO,highlightbackground=COLOR_ENTRY_BORDE)
         self._entry_contrasena.pack(padx=30, pady=(2, 6), ipady=6)
 
         # Enter dispara la acción principal
         self.ventana.bind("<Return>", lambda e: self._accion_principal())
 
         # Label de mensajes de error o éxito
-        self._label_msg = tk.Label(frame, text="",
-                                    bg=COLOR_PIEDRA, fg=COLOR_SANGRE,
-                                    font=("Courier", 9), wraplength=240)
+        self._label_msg = tk.Label(frame, text="", bg=COLOR_PIEDRA, fg=COLOR_SANGRE, font=("Courier", 9), wraplength=240)
         self._label_msg.pack(pady=(0, 14))
 
         # Botón principal: ingresar o registrarse
         texto_btn = "⚔  INGRESAR" if self._modo == "login" else "⚜  REGISTRARSE"
-        btn_principal = self.utils.boton_medieval(frame, texto_btn,
-                                                   self._accion_principal, COLOR_ORO)
+        btn_principal = self.utils.boton_medieval(frame, texto_btn, self._accion_principal, COLOR_ORO)
         btn_principal.pack(pady=(0, 10))
 
         # Separador
-        tk.Label(frame, text="─" * 28,
-                 bg=COLOR_PIEDRA, fg=COLOR_SEPARADOR,
-                 font=("Courier", 8)).pack(pady=(0, 8))
+        tk.Label(frame, text="─" * 28,bg=COLOR_PIEDRA, fg=COLOR_SEPARADOR, font=("Courier", 8)).pack(pady=(0, 8))
 
         # Botón para cambiar de modo
         if self._modo == "login":
@@ -445,13 +415,7 @@ class PantallaLogin:
         else:
             txt_cambio = "¿Ya tenés cuenta?  Iniciá sesión"
 
-        btn_cambio = tk.Button(
-            frame, text=txt_cambio,
-            bg=COLOR_PIEDRA, fg=COLOR_TEXTO_TENUE,
-            font=("Courier", 9), relief=tk.FLAT, bd=0,
-            activebackground=COLOR_PIEDRA, activeforeground=COLOR_ORO,
-            cursor="hand2", command=self._cambiar_modo
-        )
+        btn_cambio = tk.Button(frame, text=txt_cambio,bg=COLOR_PIEDRA, fg=COLOR_TEXTO_TENUE,font=("Courier", 9), relief=tk.FLAT, bd=0,activebackground=COLOR_PIEDRA, activeforeground=COLOR_ORO,cursor="hand2", command=self._cambiar_modo)
         btn_cambio.pack(pady=(0, 6))
         self.utils.hover(btn_cambio, COLOR_TEXTO_TENUE, COLOR_ORO)
 
@@ -470,12 +434,19 @@ class PantallaLogin:
             return
 
         if self._modo == "login":
+            # Evita que el mismo jugador inicie sesión dos veces en la misma partida
+            if self.nombre_excluido and nombre == self.nombre_excluido:
+                self._mostrar_msg(f"Ese usuario ya está en partida. El Jugador "
+                                  f"{self.numero_jugador} debe usar otra cuenta.", error=True)
+                return
+
             exito, resultado = self.gestor.iniciar_sesion(nombre, contrasena)
+
             if exito:
                 self.ventana.unbind("<Return>")
                 # Pasa el usuario completo al callback de navegación
                 usuario = {"nombre": nombre, **resultado}
-                self.ir_a_menu(usuario)
+                self.ir_a_continuar(usuario)
             else:
                 self._mostrar_msg(resultado, error=True)
 
@@ -499,11 +470,11 @@ class PantallaLogin:
 # botón en la esquina inferior derecha para pausar/reanudar música.
 class PantallaMenu:
 
-    def __init__(self, ventana, utils, gestor, usuario, estado_musica,ir_a_jugar, ir_a_top, ir_a_como_jugar, ir_a_cuenta):
+    def __init__(self, ventana, utils, gestor, jugadores, estado_musica,ir_a_jugar, ir_a_top, ir_a_como_jugar, ir_a_cuenta):
         self.ventana       = ventana
         self.utils         = utils           # instancia de Utilidades
         self.gestor        = gestor          # instancia de GestorUsuarios
-        self.usuario       = usuario         # dict del usuario logueado
+        self.jugadores     = jugadores       # dict {1: usuario1, 2: usuario2}
         self.estado_musica = estado_musica  # callbacks de navegación a cada sub-pantalla
         self.ir_a_jugar      = ir_a_jugar
         self.ir_a_top        = ir_a_top
@@ -527,20 +498,25 @@ class PantallaMenu:
         canvas.create_rectangle(0, 0, ancho, alto, fill=COLOR_FONDO, stipple="gray50", outline="")
         self.utils.borde_dorado(canvas, ancho, alto)
         
-        # Encabezado con el nombre del usuario
+        nombre1 = self.jugadores[1]["nombre"]
+        nombre2 = self.jugadores[2]["nombre"]
+
+        # Encabezado con el nombre de los usuarios
         tk.Label(self.ventana, text="⚔  ⚜  ⚔",bg=COLOR_FONDO, fg=COLOR_SANGRE,font=("Georgia", 16)).place(relx=0.5, y=70, anchor="center")
-        tk.Label(self.ventana, text=f"Bienvenido, {self.usuario['nombre']}",bg=COLOR_FONDO, fg=COLOR_ORO,font=("Georgia", 22, "bold")).place(relx=0.5, y=112, anchor="center")
+        tk.Label(self.ventana,text=f"Jugador 1: {nombre1}    ⚔    Jugador 2: {nombre2}",bg=COLOR_FONDO, fg=COLOR_ORO,font=("Georgia", 18, "bold")).place(relx=0.5, y=108, anchor="center")
+
         tk.Label(self.ventana, text="━━━━━━━  ✦  ━━━━━━━",bg=COLOR_FONDO, fg=COLOR_SEPARADOR,font=("Courier", 12)).place(relx=0.5, y=148, anchor="center")
 
         # Frame central con las opciones del menú
         frame = tk.Frame(self.ventana, bg=COLOR_FONDO)
         frame.place(relx=0.5, rely=0.55, anchor="center")
 
-        opciones = [("⚔  JUGAR",self.ir_a_jugar),("🏆  MEJORES PUNTUACIONES",self.ir_a_top),("📜  CÓMO JUGAR",self.ir_a_como_jugar),("⚜  CUENTA",self.ir_a_cuenta),]
+        opciones = [("⚔  JUGAR",self.ir_a_jugar),("🏆  MEJORES PUNTUACIONES",self.ir_a_top),("📜  CÓMO JUGAR",self.ir_a_como_jugar),("⚜  CUENTAS",self.ir_a_cuenta),]
 
         for texto, comando in opciones:
             btn = self.utils.boton_medieval(frame, texto, comando, COLOR_TEXTO)
             btn.pack(pady=14)
+        
         # ── Pie de página ──
         tk.Label(self.ventana,text="ITCR  ·  Introducción a la Programación  ·  2026",bg=COLOR_FONDO, fg=COLOR_TEXTO_TENUE,font=FUENTE_PEQUENA).place(relx=0.5, rely=0.97, anchor="center")
 
@@ -645,15 +621,16 @@ class PantallaTop:
 # defensor y como atacante. Permite volver al menú o cerrar sesión.
 class PantallaCuenta:
 
-    def __init__(self, ventana, utils, gestor, usuario, estado_musica,ir_a_menu, ir_a_login, ir_a_faccion):
+    def __init__(self, ventana, utils, gestor, jugadores, estado_musica,ir_a_menu, ir_a_login, ir_a_faccion,pagina_inicial=1):
         self.ventana       = ventana
         self.utils         = utils
         self.gestor        = gestor          # instancia de GestorUsuarios
-        self.usuario       = usuario          # dict del usuario logueado
+        self.jugadores     = jugadores       # dict {1: usuario1, 2: usuario2}
         self.estado_musica = estado_musica
         self.ir_a_menu      = ir_a_menu      # callback para volver al menú
         self.ir_a_login     = ir_a_login     # callback para cerrar sesión
         self.ir_a_faccion   = ir_a_faccion   # callback a la pantalla de facciones
+        self._pagina        = pagina_inicial  # 1 o 2
 
     def mostrar(self):
         # Limpia la ventana y construye la pantalla
@@ -681,39 +658,65 @@ class PantallaCuenta:
         # Símbolo y título
         tk.Label(frame, text="⚜",bg=COLOR_PIEDRA, fg=COLOR_ORO,font=("Georgia", 22)).pack(pady=(20, 4))
 
-        tk.Label(frame, text="MI CUENTA",bg=COLOR_PIEDRA, fg=COLOR_ORO,font=("Georgia", 18, "bold")).pack(pady=(0, 4))
+        tk.Label(frame, text="CUENTAS",bg=COLOR_PIEDRA, fg=COLOR_ORO,font=("Georgia", 18, "bold")).pack(pady=(0, 4))
 
         tk.Label(frame, text="━━━━━━━  ✦  ━━━━━━━",bg=COLOR_PIEDRA, fg=COLOR_SEPARADOR,font=("Courier", 10)).pack(pady=(0, 24))
 
         # Datos del usuario (vuelve a leer del archivo para mostrar
         #  el dato más actualizado, por si cambió tras una partida) ──
-        datos_actuales = self.gestor._cargar().get(self.usuario["nombre"], self.usuario)
-        faccion_actual = datos_actuales.get("faccion") or "Sin asignar"
+        self._frame = tk.Frame(self.ventana, bg=COLOR_PIEDRA)
+        self._frame.place(relx=0.5, y=275, anchor="center")
 
-        self._fila_dato(frame, "Nombre de usuario", self.usuario["nombre"])
-        self._fila_dato(frame, "Victorias como defensor 🛡", datos_actuales.get("victorias_defensor", 0))
-        self._fila_dato(frame, "Victorias como atacante ⚔", datos_actuales.get("victorias_atacante", 0))
+        self._btn_anterior = self.utils.boton_medieval(self.ventana, "◄  ANTERIOR",self._pagina_anterior, COLOR_TEXTO)
+        self._btn_anterior.place(x=160, y=480, anchor="center")
 
-        tk.Label(frame, text="",bg=COLOR_PIEDRA).pack(pady=(10, 0))
-        self._fila_dato(frame, "Facción", faccion_actual)
+        self._btn_siguiente = self.utils.boton_medieval(self.ventana, "SIGUIENTE  ►",self._pagina_siguiente, COLOR_TEXTO)
+        self._btn_siguiente.place(x=740, y=480, anchor="center")
 
-        tk.Label(frame, text="", bg=COLOR_PIEDRA).pack(pady=(8, 0))
-
-        # Botón facciones
-        texto_btn_faccion = "⚜  CAMBIAR FACCIÓN" if datos_actuales.get("faccion") else "⚜  ELEGIR FACCIÓN"
-        btn_faccion = self.utils.boton_medieval(frame, texto_btn_faccion,self.ir_a_faccion, COLOR_ORO)
-        btn_faccion.pack(pady=(0, 10))
-
-        # Botón cerrar sesión
-        btn_cerrar = self.utils.boton_medieval(frame, "⏻  CERRAR SESIÓN",self._cerrar_sesion, COLOR_SANGRE)
-        btn_cerrar.pack(pady=(0, 20))
+        self._label_pagina = tk.Label(self.ventana, text="",bg=COLOR_FONDO, fg=COLOR_TEXTO_TENUE,font=("Courier", 9))
+        self._label_pagina.place(relx=0.5, y=513, anchor="center")
 
         # Botón volver al menú
         btn_volver = self.utils.boton_medieval(self.ventana, "←  VOLVER AL MENÚ", self.ir_a_menu, COLOR_TEXTO)
         btn_volver.place(relx=0.5, y=555, anchor="center")
-
+        
+        # Botón cerrar sesión
+        btn_cerrar = self.utils.boton_medieval(self.ventana, "⏻  CERRAR SESIÓN (AMBOS)",self._cerrar_sesion, COLOR_SANGRE)
+        btn_cerrar.place(relx=0.5, y=578, anchor="center")
         # Pie de página
         tk.Label(self.ventana, text="ITCR  ·  Introducción a la Programación  ·  2026",bg=COLOR_FONDO, fg=COLOR_TEXTO_TENUE,font=FUENTE_PEQUENA).place(relx=0.5, rely=0.97, anchor="center")
+
+        self._construir_pagina()
+        
+    def _construir_pagina(self):
+        for w in self._frame.winfo_children():
+            w.destroy()
+        
+        usuario = self.jugadores[self._pagina]
+        datos_actuales = self.gestor._cargar().get(usuario["nombre"], usuario)
+        faccion_actual = datos_actuales.get("faccion") or "Sin asignar"
+        
+        color_jugador = COLOR_ORO_BRILLANTE if self._pagina == 1 else COLOR_SANGRE
+        
+        tk.Label(self._frame, text=f"JUGADOR {self._pagina}",bg=COLOR_PIEDRA, fg=color_jugador,font=("Georgia", 14, "bold")).pack(pady=(18, 2))
+        
+        tk.Label(self._frame, text="━━━━━━━  ✦  ━━━━━━━",bg=COLOR_PIEDRA, fg=COLOR_SEPARADOR,font=("Courier", 10)).pack(pady=(0, 16))
+        
+        self._fila_dato(self._frame, "Nombre de usuario", usuario["nombre"])
+        self._fila_dato(self._frame, "Victorias como defensor 🛡",datos_actuales.get("victorias_defensor", 0))
+        self._fila_dato(self._frame, "Victorias como atacante ⚔", datos_actuales.get("victorias_atacante", 0))
+        self._fila_dato(self._frame, "Facción", faccion_actual)
+        
+        tk.Label(self._frame, text="", bg=COLOR_PIEDRA).pack(pady=(4, 0))
+        
+        texto_btn_faccion = "⚜  CAMBIAR FACCIÓN" if datos_actuales.get("faccion") else "⚜  ELEGIR FACCIÓN"
+        btn_faccion = self.utils.boton_medieval(self._frame, texto_btn_faccion,lambda: self.ir_a_faccion(self._pagina), COLOR_ORO)
+        btn_faccion.pack(pady=(0, 14))
+        
+        self._label_pagina.config(text=f"Cuenta {self._pagina} de 2")
+        self._btn_anterior.config(state="disabled" if self._pagina == 1 else "normal")
+        self._btn_siguiente.config(state="disabled" if self._pagina == 2 else "normal")
+        
 
     def _fila_dato(self, frame, etiqueta, valor):
         # Crea una fila con una etiqueta a la izquierda y el valor a la derecha
@@ -722,6 +725,16 @@ class PantallaCuenta:
 
         tk.Label(fila, text=etiqueta,bg=COLOR_PIEDRA, fg=COLOR_TEXTO_TENUE,font=FUENTE_LABEL, anchor="w").pack(side="left")
         tk.Label(fila, text=str(valor),bg=COLOR_PIEDRA, fg=COLOR_TEXTO,font=("Courier", 11, "bold"), anchor="e").pack(side="right")
+
+    def _pagina_anterior(self):
+        if self._pagina > 1:
+            self._pagina -= 1
+            self._construir_pagina()
+
+    def _pagina_siguiente(self):
+        if self._pagina < 2:
+            self._pagina += 1
+            self._construir_pagina()
 
     def _cerrar_sesion(self):
         # Detiene la música y vuelve a la pantalla de login
@@ -756,14 +769,17 @@ class PantallaFaccion:
         },
     ]
 
-    def __init__(self, ventana, utils, gestor, usuario, ir_a_cuenta):
-        self.ventana     = ventana
-        self.utils       = utils
-        self.gestor      = gestor
-        self.usuario     = usuario
-        self.ir_a_cuenta = ir_a_cuenta
-        self._seleccion  = self.gestor.obtener_faccion(self.usuario["nombre"])
-        self._botones_carta = []
+    def __init__(self, ventana, utils, gestor, jugadores, numero_jugador, ir_volver, forzado=False):
+        self.ventana        = ventana
+        self.utils          = utils
+        self.gestor         = gestor
+        self.jugadores      = jugadores
+        self.numero_jugador = numero_jugador
+        self.usuario        = jugadores[numero_jugador]
+        self.ir_volver       = ir_volver
+        self.forzado         = forzado
+        self._seleccion      = self.gestor.obtener_faccion(self.usuario["nombre"])
+        self._botones_carta  = []
 
     def mostrar(self):
         for widget in self.ventana.winfo_children():
@@ -778,9 +794,18 @@ class PantallaFaccion:
         canvas.create_rectangle(0, 0, ancho, alto,fill=COLOR_FONDO, stipple="gray50", outline="")
         self.utils.borde_dorado(canvas, ancho, alto)
 
-        tk.Label(self.ventana, text="⚜  ELEGÍ TU FACCIÓN  ⚜",bg=COLOR_FONDO, fg=COLOR_ORO,font=("Georgia", 22, "bold")).place(relx=0.5, y=65, anchor="center")
+        color_jugador = COLOR_ORO_BRILLANTE if self.numero_jugador == 1 else COLOR_SANGRE
 
-        tk.Label(self.ventana,text="Esta elección quedará vinculada a tu cuenta de forma permanente.",bg=COLOR_FONDO, fg=COLOR_TEXTO_TENUE,font=FUENTE_SUBTITULO).place(relx=0.5, y=98, anchor="center")
+        tk.Label(self.ventana,text=f"⚜  JUGADOR {self.numero_jugador}: {self.usuario['nombre']}  ⚜",bg=COLOR_FONDO, fg=color_jugador, font=("Georgia", 16, "bold")).place(relx=0.5, y=50, anchor="center")
+
+        tk.Label(self.ventana, text="ELEGÍ TU FACCIÓN",bg=COLOR_FONDO, fg=COLOR_ORO, font=("Georgia", 20, "bold")).place(relx=0.5, y=85, anchor="center")
+
+        if self.forzado:
+            subtitulo = "Tu rival ya está listo. ¡Elegí una facción para empezar la partida!"
+        else:
+            subtitulo = "Esta elección quedará vinculada a tu cuenta de forma permanente."
+
+        tk.Label(self.ventana, text=subtitulo,bg=COLOR_FONDO, fg=COLOR_TEXTO_TENUE,font=FUENTE_SUBTITULO).place(relx=0.5, y=115, anchor="center")
 
         self._frame_cartas = tk.Frame(self.ventana, bg=COLOR_FONDO)
         self._frame_cartas.place(relx=0.5, y=290, anchor="center")
@@ -790,14 +815,17 @@ class PantallaFaccion:
             self._crear_carta(faccion)
 
         self._label_msg = tk.Label(self.ventana, text="",bg=COLOR_FONDO, fg="#4a8c4a",font=("Courier", 10))
-        self._label_msg.place(relx=0.5, y=465, anchor="center")
 
-        btn_confirmar = self.utils.boton_medieval(self.ventana, "✔  CONFIRMAR ELECCIÓN", self._confirmar, COLOR_ORO)
-        btn_confirmar.place(relx=0.5, y=500, anchor="center")
+        if self.forzado:
+            btn_confirmar = self.utils.boton_medieval(self.ventana, "✔  CONFIRMAR Y CONTINUAR",self._confirmar, COLOR_ORO)
+            btn_confirmar.place(relx=0.5, y=515, anchor="center")
+        else:
+            btn_confirmar = self.utils.boton_medieval(self.ventana, "✔  CONFIRMAR ELECCIÓN",self._confirmar, COLOR_ORO)
+            btn_confirmar.place(relx=0.5, y=505, anchor="center")
 
-        btn_volver = self.utils.boton_medieval(self.ventana, "←  VOLVER A MI CUENTA",self.ir_a_cuenta, COLOR_TEXTO)
-        btn_volver.place(relx=0.5, y=550, anchor="center")
-
+            btn_volver = self.utils.boton_medieval(self.ventana, "←  VOLVER A MI CUENTA",self.ir_volver, COLOR_TEXTO)
+            btn_volver.place(relx=0.5, y=550, anchor="center")
+        
         tk.Label(self.ventana,text="ITCR  ·  Introducción a la Programación  ·  2026",bg=COLOR_FONDO, fg=COLOR_TEXTO_TENUE,font=FUENTE_PEQUENA).place(relx=0.5, rely=0.97, anchor="center")
 
         self._actualizar_cartas()
@@ -832,11 +860,14 @@ class PantallaFaccion:
 
     def _confirmar(self):
         if not self._seleccion:
-            self._label_msg.config(text="Elegí una facción antes de confirmar.", fg=COLOR_SANGRE)
+            self._label_msg.config(text="Elegí una facción antes de continuar.", fg=COLOR_SANGRE)
             return
 
         exito, mensaje = self.gestor.asignar_faccion(self.usuario["nombre"], self._seleccion)
         self._label_msg.config(text=mensaje, fg="#4a8c4a" if exito else COLOR_SANGRE)
+
+        if exito and self.forzado:
+            self.ventana.after(1000, self.ir_volver)
 
 # SECCIÓN 8 — PANTALLA CÓMO JUGAR
 # Muestra las reglas del juego en formato de "libro" paginado,
@@ -978,45 +1009,141 @@ class PantallaComoJugar:
             self._pagina += 1
             self._construir_pagina()
 
+# -----------------------------------------------------------------
+# SECCIÓN 9 — PANTALLA SORTEO DE ROLES
+# Antes de iniciar la Ronda 1, se sortea al azar quién será el
+# Defensor y quién el Atacante.
+# -----------------------------------------------------------------
+class PantallaRoles:
+
+    def __init__(self, ventana, utils, jugadores, ir_a_menu, ir_continuar):
+        self.ventana      = ventana
+        self.utils        = utils
+        self.jugadores    = jugadores
+        self.ir_a_menu     = ir_a_menu
+        self.ir_continuar  = ir_continuar
+        # Sorteo al azar de roles para la Ronda 1
+        self.numero_defensor = random.choice([1, 2])
+        self.numero_atacante = 2 if self.numero_defensor == 1 else 1
+
+    def mostrar(self):
+        for widget in self.ventana.winfo_children():
+            widget.destroy()
+
+        ancho = 900
+        alto  = 620
+
+        canvas = tk.Canvas(self.ventana, width=ancho, height=alto,bg=COLOR_FONDO, highlightthickness=0)
+        canvas.place(x=0, y=0)
+        self.utils.dibujar_fondo_piedra(canvas, ancho, alto)
+        canvas.create_rectangle(0, 0, ancho, alto,fill=COLOR_FONDO, stipple="gray50", outline="")
+        self.utils.borde_dorado(canvas, ancho, alto)
+
+        tk.Label(self.ventana, text="🎲  SORTEO DE ROLES — RONDA 1  🎲",bg=COLOR_FONDO, fg=COLOR_ORO,font=("Georgia", 22, "bold")).place(relx=0.5, y=80, anchor="center")
+
+        tk.Label(self.ventana, text="━━━━━━━  ✦  ━━━━━━━",bg=COLOR_FONDO, fg=COLOR_SEPARADOR,font=("Courier", 12)).place(relx=0.5, y=118, anchor="center")
+
+        nombre_defensor = self.jugadores[self.numero_defensor]["nombre"]
+        nombre_atacante = self.jugadores[self.numero_atacante]["nombre"]
+
+        # Tarjeta del Defensor
+        canvas.create_rectangle(110, 200, 430, 420,fill=COLOR_PIEDRA, outline=COLOR_ORO, width=2)
+        tk.Label(self.ventana, text="🛡", bg=COLOR_PIEDRA,font=("Georgia", 36)).place(x=270, y=250, anchor="center")
+        tk.Label(self.ventana, text="DEFENSOR", bg=COLOR_PIEDRA, fg=COLOR_ORO_BRILLANTE,font=("Georgia", 16, "bold")).place(x=270, y=300, anchor="center")
+        tk.Label(self.ventana, text=f"Jugador {self.numero_defensor}", bg=COLOR_PIEDRA,fg=COLOR_TEXTO_TENUE, font=("Courier", 10)).place(x=270, y=335, anchor="center")
+        tk.Label(self.ventana, text=nombre_defensor, bg=COLOR_PIEDRA, fg=COLOR_TEXTO,font=("Courier", 13, "bold")).place(x=270, y=362, anchor="center")
+
+        # Tarjeta del Atacante
+        canvas.create_rectangle(470, 200, 790, 420,fill=COLOR_PIEDRA, outline=COLOR_SANGRE, width=2)
+        tk.Label(self.ventana, text="⚔", bg=COLOR_PIEDRA,font=("Georgia", 36)).place(x=630, y=250, anchor="center")
+        tk.Label(self.ventana, text="ATACANTE", bg=COLOR_PIEDRA, fg=COLOR_SANGRE,font=("Georgia", 16, "bold")).place(x=630, y=300, anchor="center")
+        tk.Label(self.ventana, text=f"Jugador {self.numero_atacante}", bg=COLOR_PIEDRA, fg=COLOR_TEXTO_TENUE, font=("Courier", 10)).place(x=630, y=335, anchor="center")
+        tk.Label(self.ventana, text=nombre_atacante, bg=COLOR_PIEDRA, fg=COLOR_TEXTO,font=("Courier", 13, "bold")).place(x=630, y=362, anchor="center")
+
+        btn_continuar = self.utils.boton_medieval(self.ventana, "⚔  COMENZAR RONDA 1  ⚔",self._continuar, COLOR_ORO)
+        btn_continuar.place(relx=0.5, y=480, anchor="center")
+
+        btn_volver = self.utils.boton_medieval(self.ventana, "←  VOLVER AL MENÚ",self.ir_a_menu, COLOR_TEXTO)
+        btn_volver.place(relx=0.5, y=530, anchor="center")
+
+        tk.Label(self.ventana,text="ITCR  ·  Introducción a la Programación  ·  2026",bg=COLOR_FONDO, fg=COLOR_TEXTO_TENUE,font=FUENTE_PEQUENA).place(relx=0.5, rely=0.97, anchor="center")
+
+    def _continuar(self):
+        roles = {"defensor": self.numero_defensor, "atacante": self.numero_atacante}
+        self.ir_continuar(roles)
+
+
+
 # INICIO DEL PROGRAMA
 # Aquí se crea la ventana, los servicios compartidos, y se navega
 # entre pantallas mediante callbacks.
 
-# Ventana principal
 ventana = tk.Tk()
 ventana.title("Defensa y Asalto de Base")
 ventana.geometry("900x620")
 ventana.resizable(False, False)
 ventana.config(bg=COLOR_FONDO)
 
-# Servicios compartidos (se crean una sola vez) 
-utils   = Utilidades()
-gestor  = GestorUsuarios()
-usuario_actual = {}  #se llena después del login exitoso
+# Servicios compartidos (se crean una sola vez)
+utils  = Utilidades()
+gestor = GestorUsuarios()
+
+# Datos de los dos jugadores de la partida actual
+jugadores = {1: {}, 2: {}}
 
 # Estado de la música (diccionario compartido entre pantallas)
-estado_musica = {"actual" : "","activa" : False,"pausada": False}
+estado_musica = {"actual": "", "activa": False, "pausada": False}
 
 # Funciones de navegación (callbacks entre pantallas)
-
 def ir_a_intro():
-    pantalla = PantallaIntro(ventana, utils, estado_musica, ir_a_login)
+    pantalla = PantallaIntro(ventana, utils, estado_musica, ir_a_login_jugador1)
     pantalla.mostrar()
 
-def ir_a_login():
-    pantalla = PantallaLogin(ventana, utils, gestor, ir_a_menu)
+def ir_a_login_jugador1():
+    # Reinicia ambos jugadores e inicia el flujo de login desde cero
+    global jugadores
+    jugadores = {1: {}, 2: {}}
+    pantalla = PantallaLogin(ventana, utils, gestor, 1, ir_a_login_jugador2)
     pantalla.mostrar()
 
-def ir_a_menu(usuario):
-    # Guarda el usuario logueado y navega al menú principal
-    global usuario_actual
-    usuario_actual = usuario
-    pantalla = PantallaMenu(ventana, utils, gestor, usuario_actual, estado_musica, ir_a_jugar, ir_a_top, ir_a_como_jugar, ir_a_cuenta)
+def ir_a_login_jugador2(usuario1):
+    global jugadores
+    jugadores[1] = usuario1
+    pantalla = PantallaLogin(ventana, utils, gestor, 2, ir_a_menu,nombre_excluido=usuario1["nombre"])
+    pantalla.mostrar()
+
+def ir_a_menu(usuario2):
+    global jugadores
+    jugadores[2] = usuario2
+    ir_a_menu_actual()
+
+def ir_a_menu_actual():
+    pantalla = PantallaMenu(ventana, utils, gestor, jugadores, estado_musica,ir_a_jugar, ir_a_top, ir_a_como_jugar, ir_a_cuenta)
     pantalla.mostrar()
 
 def ir_a_jugar():
-    print("[DEBUG] Entrando a Jugar")
-    # TODO: pantalla de selección de facción / partida
+    # Verifica que ambos jugadores tengan facción antes de avanzar
+    falta = _jugador_sin_faccion()
+    if falta:
+        pantalla = PantallaFaccion(ventana, utils, gestor, jugadores, falta,ir_a_jugar, forzado=True)
+        pantalla.mostrar()
+        return
+    pantalla = PantallaRoles(ventana, utils, jugadores, ir_a_menu_actual, ir_a_partida)
+    pantalla.mostrar()
+
+def _jugador_sin_faccion():
+    # Retorna el número del primer jugador sin facción asignada, o None si ambos tienen
+    for numero in (1, 2):
+        if not gestor.obtener_faccion(jugadores[numero]["nombre"]):
+            return numero
+    return None
+
+def ir_a_partida(roles):
+    print(f"[DEBUG] Defensor: Jugador {roles['defensor']} "
+          f"({jugadores[roles['defensor']]['nombre']}) | "
+          f"Atacante: Jugador {roles['atacante']} "
+          f"({jugadores[roles['atacante']]['nombre']})")
+    # TODO: pantalla del tablero de juego (Ronda 1)
 
 def ir_a_top():
     pantalla = PantallaTop(ventana, utils, gestor, estado_musica, ir_a_menu_actual)
@@ -1026,19 +1153,14 @@ def ir_a_como_jugar():
     pantalla = PantallaComoJugar(ventana, utils, estado_musica, ir_a_menu_actual)
     pantalla.mostrar()
 
-def ir_a_cuenta():
-    pantalla = PantallaCuenta(ventana, utils, gestor, usuario_actual, estado_musica,ir_a_menu_actual, ir_a_login, ir_a_faccion)
+def ir_a_cuenta(pagina_inicial=1):
+    pantalla = PantallaCuenta(ventana, utils, gestor, jugadores, estado_musica,ir_a_menu_actual, ir_a_login_jugador1, ir_a_faccion, pagina_inicial)
     pantalla.mostrar()
 
-def ir_a_faccion():
-    pantalla = PantallaFaccion(ventana, utils, gestor, usuario_actual, ir_a_cuenta)
+def ir_a_faccion(numero_jugador):
+    pantalla = PantallaFaccion(ventana, utils, gestor, jugadores, numero_jugador,lambda: ir_a_cuenta(numero_jugador), forzado=False)
     pantalla.mostrar()
-
-def ir_a_menu_actual():
-    # Vuelve al menú principal usando el usuario ya logueado
-    ir_a_menu(usuario_actual)
 
 # ── Arrancar en la intro ──
 ir_a_intro()
-
 ventana.mainloop()
