@@ -104,3 +104,46 @@ class Torre(ABC):
         estado = "viva" if self.esta_viva() else "destruida"
         return f"{self.nombre}({estado}, {self.vida_actual}hp)"
 
+
+# TORRE VIGÍA 
+
+class TorreVigia(Torre):
+    """
+    Torre de vigilancia rápida.
+    Vida baja y daño bajo, pero dispara dos veces cada 3 turnos.
+    """
+
+    # Estadisticas
+    STATS = {
+        "vida_maxima":          40,   # frágil: necesita protección de otras torres
+        "daño":                 12,   # daño bajo por golpe individual
+        "alcance":               2,   # cubre un radio de 2 casillas
+        "costo":                 0,   # Conectar con economía 
+        "turnos_para_habilidad": 3,   # disparo doble cada 3 turnos
+    }
+
+    def __init__(self):
+        super().__init__(
+            nombre="Torre Vigía",
+            **self.STATS
+        )
+
+    def activar_habilidad(self, contexto):
+        """
+        Disparo doble.
+        """
+        unidades = contexto.get("unidades_en_rango", [])
+        if not unidades:
+            return
+
+        # Apunta a la unidad más débil para maximizar eliminaciones
+        objetivo = min(unidades, key=lambda u: u.vida_actual)
+
+        primer_golpe  = self.atacar(objetivo)
+        segundo_golpe = self.atacar(objetivo)   # segundo disparo en el mismo turno
+
+        contexto["log"] = (
+            f"{self.nombre} dispara doble sobre {objetivo.nombre}: "
+            f"{primer_golpe} + {segundo_golpe} de daño"
+        )
+
