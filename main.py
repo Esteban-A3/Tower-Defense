@@ -688,6 +688,7 @@ class PantallaCuenta:
         # Datos del usuario (vuelve a leer del archivo para mostrar
         #  el dato más actualizado, por si cambió tras una partida) ──
         datos_actuales = self.gestor._cargar().get(self.usuario["nombre"], self.usuario)
+        faccion_actual = datos_actuales.get("faccion") or "Sin asignar"
 
         self._fila_dato(frame, "Nombre de usuario", self.usuario["nombre"])
         self._fila_dato(frame, "Victorias como defensor 🛡", datos_actuales.get("victorias_defensor", 0))
@@ -883,11 +884,15 @@ def ir_a_top():
     pantalla.mostrar()
 
 def ir_a_como_jugar():
-    print("[DEBUG] Entrando a Cómo Jugar")
-    # TODO: pantalla de reglas
+    pantalla = PantallaComoJugar(ventana, utils, estado_musica, ir_a_menu_actual)
+    pantalla.mostrar()
 
 def ir_a_cuenta():
-    pantalla = PantallaCuenta(ventana, utils, gestor, usuario_actual, estado_musica,ir_a_menu_actual, ir_a_login)
+    pantalla = PantallaCuenta(ventana, utils, gestor, usuario_actual, estado_musica,ir_a_menu_actual, ir_a_login, ir_a_faccion)
+    pantalla.mostrar()
+
+def ir_a_faccion():
+    pantalla = PantallaFaccion(ventana, utils, gestor, usuario_actual, ir_a_cuenta)
     pantalla.mostrar()
 
 def ir_a_menu_actual():
