@@ -189,3 +189,69 @@ class TorreCanon(Torre):
             f"{self.nombre} dispara explosión: {daño_area} dmg "
             f"a {len(unidades)} unidad(es), total {total_infligido}"
         )
+
+# SANADORA
+
+class TorreSanadora(Torre):
+    """
+    Torre de soporte que regenera vida en el campo de batalla.
+    """
+
+    # Estadísticas
+    CURACION_POR_TURNO = 8    # vida que regenera cada turno activo (sin esperar habilidad)
+    CURACION_HABILIDAD = 30   # curación extra masiva cuando activa la habilidad
+
+    STATS = {
+        "vida_maxima":          35,   # muy frágil: debe estar protegida
+        "daño":                  0,   # no hace daño ofensivo
+        "alcance":               2,   # área de curación de 2 casillas
+        "costo":                 0,   # Conectar con economía 
+        "turnos_para_habilidad": 5,   # pulso de curación masiva cada 5 turnos
+    }
+
+    def __init__(self):
+        super().__init__(
+            nombre="Torre Sanadora",
+            **self.STATS
+        )
+
+    def atacar(self, unidad):
+        """
+        La Torre Sanadora no ataca.
+        """
+        return 0
+
+    def avanzar_turno(self, contexto):
+        """
+        Cada turno, la Torre Sanadora aplica curación pasiva a la torre aliada
+        más dañada dentro de su rango, si es que hay alguna que necesite curación.
+        """
+        # Curación pasiva continua sobre la torre más dañada en rango
+        torres_cercanas = contexto.get("torres_cercanas", [])
+        if torres_cercanas:
+            torre_dañada = min(torres_cercanas, key=lambda t: t.vida_actual)
+            if torre_dañada.vida_actual < torre_dañada.vida_maxima:
+                torre_dañada.curar(self.CURACION_POR_TURNO)
+
+        # Luego ejecutamos la lógica del padre (que llama a activar_habilidad)
+        super().avanzar_turno(contexto)
+
+    def activar_habilidad(self, contexto):
+        """
+        Pulso de curación: restaura una cantidad grande de vida a TODAS
+        las torres aliadas en el área de influencia simultáneamente.
+        """
+        torres_cercanas = contexto.get("torres_cercanas", [])
+        torres_curadas = [t for t in torres_cercanas if t.vida_actual < t.vida_maxima]
+
+        if not torres_curadas:
+            contexto["log"] = f"{self.nombre} activó pulso pero todas las torres están al máximo"
+            return
+
+        for torre in torres_curadas:
+            torre.curar(self.CURACION_HABILIDAD)
+
+        contexto["log"] = (
+            f"{self.nombre} lanza pulso de curación: "
+            f"+{self.CURACION_HABILIDAD} vida a {len(torres_curadas)} torre(s)"
+        )
