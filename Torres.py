@@ -78,3 +78,29 @@ class Torre(ABC):
         Habilidad especial de esta torre. Cada subclase implementa la suya.
         """
 
+    # Estado de la torre y gestión de vida
+
+    def esta_viva(self):
+        """Devuelve True mientras la torre no haya sido destruida."""
+        return self.vida_actual > 0
+
+    def recibir_daño(self, cantidad):
+        """Reduce la vida de la torre. Nunca baja de 0."""
+        self.vida_actual = max(0, self.vida_actual - cantidad)
+
+    def curar(self, cantidad):
+        """Restaura vida sin superar la vida máxima."""
+        self.vida_actual = min(self.vida_maxima, self.vida_actual + cantidad)
+
+    def resumen(self):
+        """Devuelve un texto corto con el estado actual de la torre, útil para debug."""
+        return (f"[{self.nombre}] "
+                f"Vida: {self.vida_actual}/{self.vida_maxima} | "
+                f"Daño: {self.daño} | "
+                f"Alcance: {self.alcance} | "
+                f"Turno habilidad: {self._turno_actual}/{self.turnos_para_habilidad}")
+
+    def __repr__(self):
+        estado = "viva" if self.esta_viva() else "destruida"
+        return f"{self.nombre}({estado}, {self.vida_actual}hp)"
+
