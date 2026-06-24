@@ -84,3 +84,33 @@ class Unidad(ABC):
         """
         Habilidad especial de esta unidad.
         """
+
+    # Logica de vida y estado
+
+    def esta_viva(self):
+        """Devuelve True mientras la unidad no haya sido eliminada."""
+        return self.vida_actual > 0
+
+    def recibir_daño(self, cantidad):
+        """Reduce la vida de la unidad. Nunca baja de 0."""
+        self.vida_actual = max(0, self.vida_actual - cantidad)
+
+    def curar(self, cantidad):
+        """Restaura vida sin superar la vida máxima."""
+        self.vida_actual = min(self.vida_maxima, self.vida_actual + cantidad)
+
+    def porcentaje_vida(self):
+        """Devuelve la vida actual como porcentaje (0.0 a 1.0)."""
+        return self.vida_actual / self.vida_maxima
+
+    def resumen(self):
+        estado = "recuperando" if self.en_recuperacion else "activa"
+        return (f"[{self.nombre}] "
+                f"Vida: {self.vida_actual}/{self.vida_maxima} | "
+                f"Daño: {self.daño} | "
+                f"Vel: {self.velocidad} | "
+                f"Estado: {estado}")
+
+    def __repr__(self):
+        estado = "viva" if self.esta_viva() else "eliminada"
+        return f"{self.nombre}({estado}, {self.vida_actual}hp)"
