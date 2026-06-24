@@ -124,3 +124,230 @@ class Utilidades:
         estado_musica["pausada"] = False
         estado_musica["actual"]  = ""
 
+
+# -----------------------------------------------------------------
+# SECCIÓN 2 — GESTOR DE USUARIOS
+# Clase que maneja toda la lógica de registro, login y ranking.
+# Lee y escribe en un archivo JSON. No depende de Tkinter.
+# -----------------------------------------------------------------
+class GestorUsuarios:
+    ARCHIVO = "usuarios.json"
+
+    def __init__(self):
+        # Si no existe el archivo lo crea vacío
+        if not os.path.exists(self.ARCHIVO):
+            self._guardar({})
+
+    # ── Métodos privados de bajo nivel ──
+
+    def _cargar(self):
+        # Lee el archivo JSON y retorna el diccionario de usuarios
+        try:
+            with open(self.ARCHIVO, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except (json.JSONDecodeError, FileNotFoundError):
+            return {}
+
+    def _guardar(self, datos):
+        # Escribe el diccionario en el archivo JSON con sangría legible
+        with open(self.ARCHIVO, "w", encoding="utf-8") as f:
+            json.dump(datos, f, indent=4, ensure_ascii=False)
+
+    def _hashear(self, contrasena):
+        # Retorna el hash SHA-256 de la contraseña (nunca guardamos texto plano)
+        return hashlib.sha256(contrasena.encode()).hexdigest()
+
+    # ── Métodos públicos ──
+
+    def registrar(self, nombre, contrasena):
+        # Registra un usuario nuevo. Retorna (True, msg) o (False, msg).
+        if len(nombre.strip()) < 3:
+            return False, "El nombre debe tener al menos 3 caracteres."
+        if len(contrasena) < 4:
+            return False, "La contraseña debe tener al menos 4 caracteres."
+
+        datos = self._cargar()
+
+        if nombre in datos:
+            return False, "Ese nombre de usuario ya existe."
+
+        datos[nombre] = {
+            "contrasena"        : self._hashear(contrasena),
+            "victorias_defensor": 0,
+            "victorias_atacante": 0
+        }
+        self._guardar(datos)
+        return True, "¡Cuenta creada exitosamente!"
+
+    def iniciar_sesion(self, nombre, contrasena):
+        # Valida credenciales. Retorna (True, datos) o (False, msg).
+        datos = self._cargar()
+
+        if nombre not in datos:
+            return False, "Usuario no encontrado."
+
+        if datos[nombre]["contrasena"] != self._hashear(contrasena):
+            return False, "Contraseña incorrecta."
+
+        return True, datos[nombre]
+
+    def actualizar_victorias(self, nombre, rol):
+        # Suma 1 victoria al rol indicado: 'defensor' o 'atacante'
+        datos = self._cargar()
+        if nombre in datos and rol in ("defensor", "atacante"):
+            datos[nombre][f"victorias_{rol}"] += 1
+            self._guardar(datos)
+
+    def obtener_ranking(self, rol, cantidad=5):
+        # Retorna lista de (nombre, victorias) ordenada de mayor a menor
+        datos = self._cargar()
+        clave   = f"victorias_{rol}"
+        ranking = [(nombre, info[clave]) for nombre, info in datos.items()]
+        ranking.sort(key=lambda x: x[1], reverse=True)
+        return ranking[:cantidad]
+# -----------------------------------------------------------------
+# SECCIÓN 3 — PANTALLA INTRO
+# Pantalla de inicio del juego: "presiona cualquier tecla".
+# -----------------------------------------------------------------
+class PantallaIntro:
+
+    def __init__(self, ventana, utils, estado_musica, ir_a_login):
+        self.ventana       = ventana
+        self.utils         = utils          # instancia de Utilidades
+        self.estado_musica = estado_musica  # dict compartido con toda la app
+        self.ir_a_login    = ir_a_login     # callback para navegar al login
+
+    def mostrar(self):
+        # Limpia la ventana y construye la pantalla
+        for widget in self.ventana.winfo_children():
+            widget.destroy()
+
+        self.utils.tocar_musica_menu(self.estado_musica)
+
+        ancho = 900
+        alto  = 620
+
+        # ── Canvas de fondo ──
+        canvas = tk.Canvas(self.ventana, width=ancho, height=alto,
+                           bg=COLOR_FONDO, highlightthickness=0)
+        canvas.place(x=0, y=0)
+        self.utils.dibujar_fondo_piedra(canvas, ancho, alto)
+
+        # Velo oscuro sobre la cuadrícula para más dramatismo
+        canvas.create_rectangle(0, 0, ancho, alto,
+                                 fill=COLOR_FONDO, stipple="gray50", outline="")
+
+        # Marco de pergamino decorativo
+        canvas.create_rectangle(60, 60, ancho - 60, alto - 60,
+                                 fill="", outline=COLOR_SEPARADOR, width=2)
+        canvas.create_rectangle(70, 70, ancho - 70, alto - 70,
+                                 fill="", outline=COLOR_ORO, width=1)
+
+        self.utils.borde_dorado(canvas, ancho, alto)
+
+        # ── Frame central ──
+        frame = tk.Frame(self.ventana, bg=COLOR_FONDO)
+        frame.place(relx=0.5, rely=0.5, anchor="center")
+
+        # Símbolo decorativo superior
+        tk.Label(frame, text="⚔  ⚜  ⚔",
+                 bg=COLOR_FONDO, fg=COLOR_SANGRE,
+                 font=("Georgia", 18)).pack(pady=(0, 14))
+
+        # Título principal con parpadeo
+        label_titulo = tk.Label(frame, text="DEFENSA Y ASALTO",
+                                 bg=COLOR_FONDO, fg=COLOR_ORO,
+                                 font=FUENTE_TITULO)
+        label_titulo.pack(pady=(0, 4))
+        self.utils.parpadeo(label_titulo, [True], COLOR_ORO, "#7a5e28")
+
+        # Subtítulo
+        tk.Label(frame, text="DE BASE",
+                 bg=COLOR_FONDO, fg=COLOR_ORO_BRILLANTE,
+                 font=("Georgia", 22, "italic")).pack(pady=(0, 20))
+
+        # Separador ornamental
+        tk.Label(frame, text="━━━━━━━  ✦  ━━━━━━━",
+                 bg=COLOR_FONDO, fg=COLOR_SEPARADOR,
+                 font=("Courier", 12)).pack(pady=(0, 12))
+
+        # Descripción
+        tk.Label(frame,
+                 text="Dos jugadores. Una fortaleza. Solo uno sobrevivirá.",
+                 bg=COLOR_FONDO, fg=COLOR_TEXTO_TENUE,
+                 font=FUENTE_SUBTITULO).pack(pady=(0, 40))
+
+        # Texto "presiona cualquier tecla" con parpadeo suave
+        label_tecla = tk.Label(frame,
+                                text="— Presiona cualquier tecla para comenzar —",
+                                bg=COLOR_FONDO, fg=COLOR_TEXTO,
+                                font=("Courier", 11))
+        label_tecla.pack(pady=(0, 8))
+        self.utils.parpadeo(label_tecla, [True], COLOR_TEXTO, COLOR_TEXTO_TENUE, ms=900)
+
+        # Pie de página
+        tk.Label(self.ventana,
+                 text="ITCR  ·  Introducción a la Programación  ·  2026",
+                 bg=COLOR_FONDO, fg=COLOR_TEXTO_TENUE,
+                 font=FUENTE_PEQUENA).place(relx=0.5, rely=0.97, anchor="center")
+
+        # Bind: cualquier tecla o click avanza al login
+        self.ventana.bind("<Key>",      self._avanzar)
+        self.ventana.bind("<Button-1>", self._avanzar)
+
+    def _avanzar(self, evento=None):
+        # Quita los binds y navega al login
+        self.ventana.unbind("<Key>")
+        self.ventana.unbind("<Button-1>")
+        self.ir_a_login()
+
+
+
+
+# -----------------------------------------------------------------
+# INICIO DEL PROGRAMA
+# Aquí se crea la ventana, los servicios compartidos, y se navega
+# entre pantallas mediante callbacks.
+# -----------------------------------------------------------------
+
+# ── Ventana principal ──
+ventana = tk.Tk()
+ventana.title("Defensa y Asalto de Base")
+ventana.geometry("900x620")
+ventana.resizable(False, False)
+ventana.config(bg=COLOR_FONDO)
+
+# ── Servicios compartidos (se crean una sola vez) ──
+utils   = Utilidades()
+gestor  = GestorUsuarios()
+usuario_actual = {}  # se llena después del login exitoso
+
+# Estado de la música (diccionario compartido entre pantallas)
+estado_musica = {
+    "actual" : "",
+    "activa" : False,
+    "pausada": False
+}
+
+# ── Funciones de navegación (callbacks entre pantallas) ──
+
+def ir_a_intro():
+    pantalla = PantallaIntro(ventana, utils, estado_musica, ir_a_login)
+    pantalla.mostrar()
+
+def ir_a_login():
+    pantalla = PantallaLogin(ventana, utils, gestor, ir_a_menu)
+    pantalla.mostrar()
+
+def ir_a_menu(usuario):
+    # Guarda el usuario logueado y navega al menú (por implementar)
+    global usuario_actual
+    usuario_actual = usuario
+    print(f"[DEBUG] Usuario logueado: {usuario_actual['nombre']}")
+    # TODO: pantalla = PantallaMenu(ventana, utils, gestor, usuario_actual, ...)
+
+# ── Arrancar en la intro ──
+ir_a_intro()
+
+ventana.mainloop()
+
