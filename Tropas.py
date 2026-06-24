@@ -1,4 +1,4 @@
-from abc import ABC
+from abc import ABC, abstractmethod
 
 class Unidad(ABC):
     """
@@ -58,4 +58,29 @@ class Unidad(ABC):
             abs(self.columna - columna_objetivo)
         )
         return distancia <= self.alcance
-    
+    # Logica de movimiento
+
+    def puede_moverse(self):
+        """
+        Devuelve True si la unidad puede avanzar este turno.
+        """
+        return self.esta_viva() and not self.en_recuperacion
+
+    # Logica de turnos y habilidades especiales
+
+    def avanzar_turno(self, contexto):
+        """
+        Llamado por el motor de combate al inicio de cada turno.
+        Incrementa el contador y dispara la habilidad cuando toca.
+        """
+        self._turno_actual += 1
+
+        if self._turno_actual >= self.turnos_para_habilidad:
+            self.activar_habilidad(contexto)
+            self._turno_actual = 0
+
+    @abstractmethod
+    def activar_habilidad(self, contexto):
+        """
+        Habilidad especial de esta unidad.
+        """
