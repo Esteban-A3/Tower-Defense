@@ -36,15 +36,14 @@ FUENTE_PEQUENA   = ("Courier", 8)
 FUENTE_ENTRY     = ("Courier", 13)
 
 
-# -----------------------------------------------------------------
+# 
 # SECCIÓN 1 — UTILIDADES
 # Clase con funciones compartidas por todas las pantallas:
 # fondo, parpadeo, hover y música.
-# -----------------------------------------------------------------
+# 
 class Utilidades:
 
-    # ── Fondo ──
-
+    # Fondo 
     def dibujar_fondo_piedra(self, canvas, ancho, alto):
         # Dibuja la cuadrícula de piedra medieval alternando dos colores
         tam = 36
@@ -66,16 +65,14 @@ class Utilidades:
                 canvas.create_rectangle(x, y, x + 12, y + 12,
                                         fill=COLOR_SANGRE, outline=COLOR_ORO)
 
-    # ── Animaciones ──
-
+    # Animaciones
     def parpadeo(self, label, estado, color_on, color_off, ms=700):
         # Alterna el color del label entre color_on y color_off cada ms milisegundos
         label.config(fg=color_on if estado[0] else color_off)
         estado[0] = not estado[0]
         label.after(ms, self.parpadeo, label, estado, color_on, color_off, ms)
 
-    # ── Interacción ──
-
+    # Interacción
     def hover(self, boton, color_normal, color_hover):
         # Aplica efecto hover: cambia color al entrar y salir el mouse
         boton.bind("<Enter>", lambda e: boton.config(fg=color_hover))
@@ -83,17 +80,12 @@ class Utilidades:
 
     def boton_medieval(self, padre, texto, comando, color=COLOR_TEXTO):
         # Crea un botón con el estilo medieval estándar y le aplica hover
-        btn = tk.Button(
-            padre, text=texto, bg=COLOR_FONDO, fg=color,
-            font=FUENTE_BOTON, relief=tk.FLAT, bd=0,
-            activebackground=COLOR_FONDO, activeforeground=COLOR_ORO_BRILLANTE,
-            cursor="hand2", command=comando
-        )
+        btn = tk.Button(padre, text=texto, bg=COLOR_FONDO, fg=color,font=FUENTE_BOTON, relief=tk.FLAT, bd=0, activebackground=COLOR_FONDO, activeforeground=COLOR_ORO_BRILLANTE,
+            cursor="hand2", command=comando)
         self.hover(btn, color, COLOR_ORO_BRILLANTE)
         return btn
 
-    # ── Música ──
-
+    # Música
     def tocar_musica_menu(self, estado_musica):
         # Carga y reproduce la música del menú en loop si no está ya sonando
         ruta = os.path.join(os.path.dirname(os.path.abspath(__file__)),
@@ -125,11 +117,10 @@ class Utilidades:
         estado_musica["actual"]  = ""
 
 
-# -----------------------------------------------------------------
 # SECCIÓN 2 — GESTOR DE USUARIOS
 # Clase que maneja toda la lógica de registro, login y ranking.
 # Lee y escribe en un archivo JSON. No depende de Tkinter.
-# -----------------------------------------------------------------
+
 class GestorUsuarios:
     ARCHIVO = "usuarios.json"
 
@@ -138,7 +129,7 @@ class GestorUsuarios:
         if not os.path.exists(self.ARCHIVO):
             self._guardar({})
 
-    # ── Métodos privados de bajo nivel ──
+    # Métodos privados de bajo nivel
 
     def _cargar(self):
         # Lee el archivo JSON y retorna el diccionario de usuarios
@@ -157,7 +148,7 @@ class GestorUsuarios:
         # Retorna el hash SHA-256 de la contraseña (nunca guardamos texto plano)
         return hashlib.sha256(contrasena.encode()).hexdigest()
 
-    # ── Métodos públicos ──
+    # Métodos públicos
 
     def registrar(self, nombre, contrasena):
         # Registra un usuario nuevo. Retorna (True, msg) o (False, msg).
@@ -205,10 +196,10 @@ class GestorUsuarios:
         ranking = [(nombre, info[clave]) for nombre, info in datos.items()]
         ranking.sort(key=lambda x: x[1], reverse=True)
         return ranking[:cantidad]
-# -----------------------------------------------------------------
+
 # SECCIÓN 3 — PANTALLA INTRO
 # Pantalla de inicio del juego: "presiona cualquier tecla".
-# -----------------------------------------------------------------
+
 class PantallaIntro:
 
     def __init__(self, ventana, utils, estado_musica, ir_a_login):
@@ -301,10 +292,10 @@ class PantallaIntro:
         self.ventana.unbind("<Button-1>")
         self.ir_a_login()
 
-# -----------------------------------------------------------------
+
 # SECCIÓN 4 — PANTALLA LOGIN
 # Formulario de inicio de sesión y registro de usuarios.
-# -----------------------------------------------------------------
+
 class PantallaLogin:
 
     def __init__(self, ventana, utils, gestor, ir_a_menu):
@@ -322,7 +313,7 @@ class PantallaLogin:
         ancho = 900
         alto  = 620
 
-        # ── Canvas de fondo ──
+        # Canvas de fondo
         canvas = tk.Canvas(self.ventana, width=ancho, height=alto,
                            bg=COLOR_FONDO, highlightthickness=0)
         canvas.place(x=0, y=0)
@@ -338,7 +329,7 @@ class PantallaLogin:
 
         self.utils.borde_dorado(canvas, ancho, alto)
 
-        # ── Frame del formulario ──
+        # Frame del formulario 
         self._frame = tk.Frame(self.ventana, bg=COLOR_PIEDRA)
         self._frame.place(relx=0.5, rely=0.5, anchor="center")
 
@@ -372,7 +363,7 @@ class PantallaLogin:
                  bg=COLOR_PIEDRA, fg=COLOR_SEPARADOR,
                  font=("Courier", 10)).pack(pady=(0, 20))
 
-        # ── Campo: nombre de usuario ──
+        # Campo: nombre de usuario
         tk.Label(frame, text="Nombre de Usuario",
                  bg=COLOR_PIEDRA, fg=COLOR_TEXTO_TENUE,
                  font=FUENTE_LABEL).pack(anchor="w", padx=30)
@@ -387,7 +378,7 @@ class PantallaLogin:
         self._entry_nombre.pack(padx=30, pady=(2, 14), ipady=6)
         self._entry_nombre.focus()
 
-        # ── Campo: contraseña ──
+        # Campo: contraseña
         tk.Label(frame, text="Contraseña",
                  bg=COLOR_PIEDRA, fg=COLOR_TEXTO_TENUE,
                  font=FUENTE_LABEL).pack(anchor="w", padx=30)
@@ -410,7 +401,7 @@ class PantallaLogin:
                                     font=("Courier", 9), wraplength=240)
         self._label_msg.pack(pady=(0, 14))
 
-        # ── Botón principal: ingresar o registrarse ──
+        # Botón principal: ingresar o registrarse
         texto_btn = "⚔  INGRESAR" if self._modo == "login" else "⚜  REGISTRARSE"
         btn_principal = self.utils.boton_medieval(frame, texto_btn,
                                                    self._accion_principal, COLOR_ORO)
@@ -421,7 +412,7 @@ class PantallaLogin:
                  bg=COLOR_PIEDRA, fg=COLOR_SEPARADOR,
                  font=("Courier", 8)).pack(pady=(0, 8))
 
-        # ── Botón para cambiar de modo ──
+        # Botón para cambiar de modo
         if self._modo == "login":
             txt_cambio = "¿No tenés cuenta?  Registrate aquí"
         else:
@@ -475,32 +466,97 @@ class PantallaLogin:
         color = COLOR_SANGRE if error else "#4a8c4a"
         self._label_msg.config(text=texto, fg=color)
 
-# -----------------------------------------------------------------
+# SECCIÓN 5 — PANTALLA MENÚ PRINCIPAL
+# Pantalla que se muestra después del login. Permite navegar a:
+# Jugar, Mejores Puntuaciones, Cómo Jugar y Cuenta. Incluye un
+# botón en la esquina inferior derecha para pausar/reanudar música.
+class PantallaMenu:
+
+    def __init__(self, ventana, utils, gestor, usuario, estado_musica,ir_a_jugar, ir_a_top, ir_a_como_jugar, ir_a_cuenta):
+        self.ventana       = ventana
+        self.utils         = utils           # instancia de Utilidades
+        self.gestor        = gestor          # instancia de GestorUsuarios
+        self.usuario       = usuario         # dict del usuario logueado
+        self.estado_musica = estado_musica  # callbacks de navegación a cada sub-pantalla
+        self.ir_a_jugar      = ir_a_jugar
+        self.ir_a_top        = ir_a_top
+        self.ir_a_como_jugar = ir_a_como_jugar
+        self.ir_a_cuenta     = ir_a_cuenta
+    
+    def mostrar(self):
+        # Limpia la ventana y construye el menú
+        for widget in self.ventana.winfo_children():
+            widget.destroy()
+
+        self.utils.tocar_musica_menu(self.estado_musica)
+
+        ancho = 900
+        alto  = 620
+
+        # Canvas de fondo 
+        canvas = tk.Canvas(self.ventana, width=ancho, height=alto,bg=COLOR_FONDO, highlightthickness=0)
+        canvas.place(x=0, y=0)
+        self.utils.dibujar_fondo_piedra(canvas, ancho, alto)
+        canvas.create_rectangle(0, 0, ancho, alto, fill=COLOR_FONDO, stipple="gray50", outline="")
+        self.utils.borde_dorado(canvas, ancho, alto)
+        
+        # Encabezado con el nombre del usuario
+        tk.Label(self.ventana, text="⚔  ⚜  ⚔",bg=COLOR_FONDO, fg=COLOR_SANGRE,font=("Georgia", 16)).place(relx=0.5, y=70, anchor="center")
+        tk.Label(self.ventana, text=f"Bienvenido, {self.usuario['nombre']}",bg=COLOR_FONDO, fg=COLOR_ORO,font=("Georgia", 22, "bold")).place(relx=0.5, y=112, anchor="center")
+        tk.Label(self.ventana, text="━━━━━━━  ✦  ━━━━━━━",bg=COLOR_FONDO, fg=COLOR_SEPARADOR,font=("Courier", 12)).place(relx=0.5, y=148, anchor="center")
+
+        # Frame central con las opciones del menú
+        frame = tk.Frame(self.ventana, bg=COLOR_FONDO)
+        frame.place(relx=0.5, rely=0.55, anchor="center")
+
+        opciones = [("⚔  JUGAR",self.ir_a_jugar),("🏆  MEJORES PUNTUACIONES",self.ir_a_top),("📜  CÓMO JUGAR",self.ir_a_como_jugar),("⚜  CUENTA",self.ir_a_cuenta),]
+
+        for texto, comando in opciones:
+            btn = self.utils.boton_medieval(frame, texto, comando, COLOR_TEXTO)
+            btn.pack(pady=14)
+        # ── Pie de página ──
+        tk.Label(self.ventana,text="ITCR  ·  Introducción a la Programación  ·  2026",bg=COLOR_FONDO, fg=COLOR_TEXTO_TENUE,font=FUENTE_PEQUENA).place(relx=0.5, rely=0.97, anchor="center")
+
+        # ── Botón de música, esquina inferior derecha ──
+        self._construir_boton_musica()
+
+    def _construir_boton_musica(self):
+        # Texto cambia según si la música está sonando o pausada
+        texto = "♪  MÚSICA" if self.estado_musica["activa"] else "✕  MÚSICA"
+        self._btn_musica = tk.Button(self.ventana, text=texto,bg=COLOR_FONDO, fg=COLOR_TEXTO_TENUE,font=("Courier", 10, "bold"), relief=tk.FLAT, bd=0,activebackground=COLOR_FONDO, activeforeground=COLOR_ORO_BRILLANTE,
+            cursor="hand2", command=self._alternar_musica)
+        self._btn_musica.place(relx=0.97, rely=0.94, anchor="se")
+        self.utils.hover(self._btn_musica, COLOR_TEXTO_TENUE, COLOR_ORO_BRILLANTE)
+
+    def _alternar_musica(self):
+        # Pausa o reanuda la música y actualiza el texto del botón
+        self.utils.alternar_musica(self.estado_musica)
+        nuevo_texto = "♪  MÚSICA" if self.estado_musica["activa"] else "✕  MÚSICA"
+        self._btn_musica.config(text=nuevo_texto)
+
+
+
 # INICIO DEL PROGRAMA
 # Aquí se crea la ventana, los servicios compartidos, y se navega
 # entre pantallas mediante callbacks.
-# -----------------------------------------------------------------
+# 
 
-# ── Ventana principal ──
+# Ventana principal
 ventana = tk.Tk()
 ventana.title("Defensa y Asalto de Base")
 ventana.geometry("900x620")
 ventana.resizable(False, False)
 ventana.config(bg=COLOR_FONDO)
 
-# ── Servicios compartidos (se crean una sola vez) ──
+# Servicios compartidos (se crean una sola vez) 
 utils   = Utilidades()
 gestor  = GestorUsuarios()
-usuario_actual = {}  # se llena después del login exitoso
+usuario_actual = {}  #se llena después del login exitoso
 
 # Estado de la música (diccionario compartido entre pantallas)
-estado_musica = {
-    "actual" : "",
-    "activa" : False,
-    "pausada": False
-}
+estado_musica = {"actual" : "","activa" : False,"pausada": False}
 
-# ── Funciones de navegación (callbacks entre pantallas) ──
+# Funciones de navegación (callbacks entre pantallas)
 
 def ir_a_intro():
     pantalla = PantallaIntro(ventana, utils, estado_musica, ir_a_login)
@@ -511,11 +567,27 @@ def ir_a_login():
     pantalla.mostrar()
 
 def ir_a_menu(usuario):
-    # Guarda el usuario logueado y navega al menú (por implementar)
+    # Guarda el usuario logueado y navega al menú principal
     global usuario_actual
     usuario_actual = usuario
-    print(f"[DEBUG] Usuario logueado: {usuario_actual['nombre']}")
-    # TODO: pantalla = PantallaMenu(ventana, utils, gestor, usuario_actual, ...)
+    pantalla = PantallaMenu(ventana, utils, gestor, usuario_actual, estado_musica, ir_a_jugar, ir_a_top, ir_a_como_jugar, ir_a_cuenta)
+    pantalla.mostrar()
+
+def ir_a_jugar():
+    print("[DEBUG] Entrando a Jugar")
+    # TODO: pantalla de selección de facción / partida
+
+def ir_a_top():
+    print("[DEBUG] Entrando a Mejores Puntuaciones")
+    # TODO: pantalla de ranking (usa gestor.obtener_ranking)
+
+def ir_a_como_jugar():
+    print("[DEBUG] Entrando a Cómo Jugar")
+    # TODO: pantalla de reglas
+
+def ir_a_cuenta():
+    print("[DEBUG] Entrando a Cuenta")
+    # TODO: pantalla de perfil / cerrar sesión
 
 # ── Arrancar en la intro ──
 ir_a_intro()
