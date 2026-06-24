@@ -728,12 +728,11 @@ class PantallaCuenta:
         self.utils.parar_musica(self.estado_musica)
         self.ir_a_login()
 
-# -----------------------------------------------------------------
+
 # SECCIÓN 7.5 — PANTALLA SELECCIÓN DE FACCIÓN
 # Permite vincular permanentemente una facción al perfil del
 # usuario. La elección se guarda en usuarios.json mediante
 # GestorUsuarios.asignar_faccion().
-# -----------------------------------------------------------------
 class PantallaFaccion:
 
     FACCIONES = [
@@ -839,6 +838,146 @@ class PantallaFaccion:
         exito, mensaje = self.gestor.asignar_faccion(self.usuario["nombre"], self._seleccion)
         self._label_msg.config(text=mensaje, fg="#4a8c4a" if exito else COLOR_SANGRE)
 
+# SECCIÓN 8 — PANTALLA CÓMO JUGAR
+# Muestra las reglas del juego en formato de "libro" paginado,
+# basadas en las reglas oficiales del proyecto.
+class PantallaComoJugar:
+    REGLAS = [
+        {
+            "titulo": "⚔  Objetivo del Juego",
+            "texto": ("Dos jugadores se enfrentan: uno asume el rol de Defensor y el "
+                      "otro el de Atacante.\n\n"
+                      "El Defensor debe proteger su base central construyendo muros y "
+                      "torres defensivas. El Atacante debe destruir esa base usando "
+                      "diferentes unidades.\n\n"
+                      "La partida se juega por rondas. El primer jugador que gane 3 "
+                      "rondas se convierte en el ganador de la partida."),
+        },
+        {
+            "titulo": "🗺  El Mapa y las Facciones",
+            "texto": ("El campo de batalla es una cuadrícula de al menos 10x10 casillas, "
+                      "donde se ubican la base central, los muros, las torres, las "
+                      "unidades y los caminos libres. La base central siempre está en "
+                      "una posición fija.\n\n"
+                      "Antes de iniciar, cada jugador elige una facción distinta a la "
+                      "de su rival. La facción cambia el aspecto visual de tus torres, "
+                      "muros, unidades y base central."),
+        },
+        {
+            "titulo": "🛡  Rol del Defensor",
+            "texto": ("Al inicio de cada ronda el Defensor recibe dinero y construye "
+                      "sus defensas antes de que llegue el ataque.\n\n"
+                      "• Puede construir muros y al menos 3 tipos de torres "
+                      "(básica, pesada y mágica).\n"
+                      "• Cada torre tiene costo, vida, daño, alcance y una habilidad "
+                      "especial.\n"
+                      "• Gana dinero extra por cada unidad enemiga eliminada."),
+        },
+        {
+            "titulo": "⚔  Rol del Atacante",
+            "texto": ("El Atacante juega después de que el Defensor termina de "
+                      "construir, comprando y colocando sus unidades.\n\n"
+                      "• Puede comprar al menos 3 tipos de unidades "
+                      "(soldado básico, tanque y unidad rápida).\n"
+                      "• Cada unidad tiene costo, vida, daño, velocidad y una "
+                      "habilidad especial.\n"
+                      "• Gana dinero al dañar una torre, destruirla o dañar la base."),
+        },
+        {
+            "titulo": "🔄  Desarrollo de una Ronda",
+            "texto": ("Cada ronda sigue siempre el mismo orden:\n\n"
+                      "1. El Defensor recibe su dinero inicial.\n"
+                      "2. El Defensor coloca muros y torres.\n"
+                      "3. El Atacante recibe su dinero inicial.\n"
+                      "4. El Atacante compra y coloca sus unidades.\n"
+                      "5. Se ejecuta la fase de combate.\n"
+                      "6. Se determina el ganador de la ronda.\n"
+                      "7. Se actualiza el marcador.\n"
+                      "8. Si nadie ha ganado 3 rondas, empieza una nueva."),
+        },
+        {
+            "titulo": "🏆  Condiciones de Victoria",
+            "texto": ("El Defensor gana la ronda si:\n"
+                      "• El Atacante se queda sin dinero.\n"
+                      "• Todas las unidades atacantes son eliminadas.\n"
+                      "• La base central no fue destruida.\n\n"
+                      "El Atacante gana la ronda si logra destruir la base central.\n\n"
+                      "El primer jugador en ganar 3 rondas gana la partida, y esa "
+                      "victoria queda registrada en su cuenta."),
+        },
+    ]
+
+    def __init__(self, ventana, utils, estado_musica, ir_a_menu):
+        self.ventana       = ventana
+        self.utils         = utils
+        self.estado_musica = estado_musica
+        self.ir_a_menu      = ir_a_menu
+        self._pagina        = 0
+
+    def mostrar(self):
+        for widget in self.ventana.winfo_children():
+            widget.destroy()
+
+        ancho = 900
+        alto  = 620
+
+        canvas = tk.Canvas(self.ventana, width=ancho, height=alto,bg=COLOR_FONDO, highlightthickness=0)
+        canvas.place(x=0, y=0)
+        self.utils.dibujar_fondo_piedra(canvas, ancho, alto)
+        canvas.create_rectangle(0, 0, ancho, alto,fill=COLOR_FONDO, stipple="gray50", outline="")
+        self.utils.borde_dorado(canvas, ancho, alto)
+
+        canvas.create_rectangle(110, 95, 790, 500,fill=COLOR_PIEDRA, outline=COLOR_SEPARADOR, width=2)
+        canvas.create_rectangle(112, 97, 788, 498, fill="", outline=COLOR_ORO, width=1)
+
+        tk.Label(self.ventana, text="📜  CÓMO JUGAR  📜",bg=COLOR_FONDO, fg=COLOR_ORO,font=("Georgia", 22, "bold")).place(relx=0.5, y=65, anchor="center")
+
+        self._frame = tk.Frame(self.ventana, bg=COLOR_PIEDRA)
+        self._frame.place(relx=0.5, y=290, anchor="center")
+
+        self._btn_anterior = self.utils.boton_medieval(self.ventana, "◄  ANTERIOR",self._pagina_anterior, COLOR_TEXTO)
+        self._btn_anterior.place(x=160, y=460, anchor="center")
+
+        self._btn_siguiente = self.utils.boton_medieval(self.ventana, "SIGUIENTE  ►", self._pagina_siguiente, COLOR_TEXTO)
+        self._btn_siguiente.place(x=740, y=460, anchor="center")
+
+        self._label_pagina = tk.Label(self.ventana, text="", bg=COLOR_FONDO, fg=COLOR_TEXTO_TENUE, font=("Courier", 9))
+        self._label_pagina.place(relx=0.5, y=495, anchor="center")
+
+        btn_volver = self.utils.boton_medieval(self.ventana, "←  VOLVER AL MENÚ", self.ir_a_menu, COLOR_TEXTO)
+        btn_volver.place(relx=0.5, y=545, anchor="center")
+
+        tk.Label(self.ventana,text="ITCR  ·  Introducción a la Programación  ·  2026", bg=COLOR_FONDO, fg=COLOR_TEXTO_TENUE,font=FUENTE_PEQUENA).place(relx=0.5, rely=0.97, anchor="center")
+
+        self._construir_pagina()
+
+    def _construir_pagina(self):
+        for w in self._frame.winfo_children():
+            w.destroy()
+
+        regla = self.REGLAS[self._pagina]
+
+        tk.Label(self._frame, text=regla["titulo"], bg=COLOR_PIEDRA, fg=COLOR_ORO_BRILLANTE,font=("Georgia", 15, "bold")).pack(pady=(20, 10))
+
+        tk.Label(self._frame, text="━━━━━━━  ✦  ━━━━━━━",bg=COLOR_PIEDRA, fg=COLOR_SEPARADOR,font=("Courier", 10)).pack(pady=(0, 16))
+
+        tk.Label(self._frame, text=regla["texto"],bg=COLOR_PIEDRA, fg=COLOR_TEXTO,font=("Courier", 10), justify="left",wraplength=620).pack(padx=40, pady=(0, 20))
+
+        self._label_pagina.config(text=f"Página {self._pagina + 1} de {len(self.REGLAS)}")
+
+        self._btn_anterior.config(state="disabled" if self._pagina == 0 else "normal")
+        self._btn_siguiente.config(state="disabled" if self._pagina == len(self.REGLAS) - 1 else "normal")
+
+    def _pagina_anterior(self):
+        if self._pagina > 0:
+            self._pagina -= 1
+            self._construir_pagina()
+
+    def _pagina_siguiente(self):
+        if self._pagina < len(self.REGLAS) - 1:
+            self._pagina += 1
+            self._construir_pagina()
+
 # INICIO DEL PROGRAMA
 # Aquí se crea la ventana, los servicios compartidos, y se navega
 # entre pantallas mediante callbacks.
@@ -903,4 +1042,3 @@ def ir_a_menu_actual():
 ir_a_intro()
 
 ventana.mainloop()
-
