@@ -301,8 +301,179 @@ class PantallaIntro:
         self.ventana.unbind("<Button-1>")
         self.ir_a_login()
 
+# -----------------------------------------------------------------
+# SECCIÓN 4 — PANTALLA LOGIN
+# Formulario de inicio de sesión y registro de usuarios.
+# -----------------------------------------------------------------
+class PantallaLogin:
 
+    def __init__(self, ventana, utils, gestor, ir_a_menu):
+        self.ventana   = ventana
+        self.utils     = utils    # instancia de Utilidades
+        self.gestor    = gestor   # instancia de GestorUsuarios
+        self.ir_a_menu = ir_a_menu  # callback que recibe el usuario logueado
+        self._modo     = "login"  # puede ser "login" o "registro"
 
+    def mostrar(self):
+        # Limpia la ventana y construye la pantalla
+        for widget in self.ventana.winfo_children():
+            widget.destroy()
+
+        ancho = 900
+        alto  = 620
+
+        # ── Canvas de fondo ──
+        canvas = tk.Canvas(self.ventana, width=ancho, height=alto,
+                           bg=COLOR_FONDO, highlightthickness=0)
+        canvas.place(x=0, y=0)
+        self.utils.dibujar_fondo_piedra(canvas, ancho, alto)
+        canvas.create_rectangle(0, 0, ancho, alto,
+                                 fill=COLOR_FONDO, stipple="gray50", outline="")
+
+        # Panel del formulario (simulado con rectángulos en el canvas)
+        canvas.create_rectangle(250, 100, 650, 520,
+                                 fill=COLOR_PIEDRA, outline=COLOR_SEPARADOR, width=2)
+        canvas.create_rectangle(252, 102, 648, 518,
+                                 fill="", outline=COLOR_ORO, width=1)
+
+        self.utils.borde_dorado(canvas, ancho, alto)
+
+        # ── Frame del formulario ──
+        self._frame = tk.Frame(self.ventana, bg=COLOR_PIEDRA)
+        self._frame.place(relx=0.5, rely=0.5, anchor="center")
+
+        self._construir_formulario()
+
+        # Pie de página
+        tk.Label(self.ventana,
+                 text="ITCR  ·  Introducción a la Programación  ·  2026",
+                 bg=COLOR_FONDO, fg=COLOR_TEXTO_TENUE,
+                 font=FUENTE_PEQUENA).place(relx=0.5, rely=0.97, anchor="center")
+
+    def _construir_formulario(self):
+        # Limpia el frame y reconstruye el formulario según el modo actual
+        for w in self._frame.winfo_children():
+            w.destroy()
+
+        frame = self._frame
+
+        # Símbolo y título del panel
+        tk.Label(frame, text="⚜",
+                 bg=COLOR_PIEDRA, fg=COLOR_ORO,
+                 font=("Georgia", 20)).pack(pady=(16, 4))
+
+        titulo = "INICIO DE SESIÓN" if self._modo == "login" else "CREAR CUENTA"
+        tk.Label(frame, text=titulo,
+                 bg=COLOR_PIEDRA, fg=COLOR_ORO,
+                 font=("Georgia", 16, "bold")).pack(pady=(0, 4))
+
+        # Separador
+        tk.Label(frame, text="━━━━━━━  ✦  ━━━━━━━",
+                 bg=COLOR_PIEDRA, fg=COLOR_SEPARADOR,
+                 font=("Courier", 10)).pack(pady=(0, 20))
+
+        # ── Campo: nombre de usuario ──
+        tk.Label(frame, text="Nombre de Usuario",
+                 bg=COLOR_PIEDRA, fg=COLOR_TEXTO_TENUE,
+                 font=FUENTE_LABEL).pack(anchor="w", padx=30)
+
+        self._entry_nombre = tk.Entry(
+            frame, bg=COLOR_ENTRY_FONDO, fg=COLOR_TEXTO,
+            font=FUENTE_ENTRY, relief=tk.FLAT, width=24,
+            insertbackground=COLOR_ORO,
+            highlightthickness=1, highlightcolor=COLOR_ORO,
+            highlightbackground=COLOR_ENTRY_BORDE
+        )
+        self._entry_nombre.pack(padx=30, pady=(2, 14), ipady=6)
+        self._entry_nombre.focus()
+
+        # ── Campo: contraseña ──
+        tk.Label(frame, text="Contraseña",
+                 bg=COLOR_PIEDRA, fg=COLOR_TEXTO_TENUE,
+                 font=FUENTE_LABEL).pack(anchor="w", padx=30)
+
+        self._entry_contrasena = tk.Entry(
+            frame, bg=COLOR_ENTRY_FONDO, fg=COLOR_TEXTO,
+            font=FUENTE_ENTRY, relief=tk.FLAT, width=24,
+            insertbackground=COLOR_ORO, show="•",
+            highlightthickness=1, highlightcolor=COLOR_ORO,
+            highlightbackground=COLOR_ENTRY_BORDE
+        )
+        self._entry_contrasena.pack(padx=30, pady=(2, 6), ipady=6)
+
+        # Enter dispara la acción principal
+        self.ventana.bind("<Return>", lambda e: self._accion_principal())
+
+        # Label de mensajes de error o éxito
+        self._label_msg = tk.Label(frame, text="",
+                                    bg=COLOR_PIEDRA, fg=COLOR_SANGRE,
+                                    font=("Courier", 9), wraplength=240)
+        self._label_msg.pack(pady=(0, 14))
+
+        # ── Botón principal: ingresar o registrarse ──
+        texto_btn = "⚔  INGRESAR" if self._modo == "login" else "⚜  REGISTRARSE"
+        btn_principal = self.utils.boton_medieval(frame, texto_btn,
+                                                   self._accion_principal, COLOR_ORO)
+        btn_principal.pack(pady=(0, 10))
+
+        # Separador
+        tk.Label(frame, text="─" * 28,
+                 bg=COLOR_PIEDRA, fg=COLOR_SEPARADOR,
+                 font=("Courier", 8)).pack(pady=(0, 8))
+
+        # ── Botón para cambiar de modo ──
+        if self._modo == "login":
+            txt_cambio = "¿No tenés cuenta?  Registrate aquí"
+        else:
+            txt_cambio = "¿Ya tenés cuenta?  Iniciá sesión"
+
+        btn_cambio = tk.Button(
+            frame, text=txt_cambio,
+            bg=COLOR_PIEDRA, fg=COLOR_TEXTO_TENUE,
+            font=("Courier", 9), relief=tk.FLAT, bd=0,
+            activebackground=COLOR_PIEDRA, activeforeground=COLOR_ORO,
+            cursor="hand2", command=self._cambiar_modo
+        )
+        btn_cambio.pack(pady=(0, 6))
+        self.utils.hover(btn_cambio, COLOR_TEXTO_TENUE, COLOR_ORO)
+
+    def _cambiar_modo(self):
+        # Alterna entre login y registro y reconstruye el formulario
+        self._modo = "registro" if self._modo == "login" else "login"
+        self._construir_formulario()
+
+    def _accion_principal(self):
+        # Ejecuta login o registro dependiendo del modo actual
+        nombre    = self._entry_nombre.get().strip()
+        contrasena = self._entry_contrasena.get()
+
+        if not nombre or not contrasena:
+            self._mostrar_msg("Completá todos los campos.", error=True)
+            return
+
+        if self._modo == "login":
+            exito, resultado = self.gestor.iniciar_sesion(nombre, contrasena)
+            if exito:
+                self.ventana.unbind("<Return>")
+                # Pasa el usuario completo al callback de navegación
+                usuario = {"nombre": nombre, **resultado}
+                self.ir_a_menu(usuario)
+            else:
+                self._mostrar_msg(resultado, error=True)
+
+        else:  # modo registro
+            exito, mensaje = self.gestor.registrar(nombre, contrasena)
+            if exito:
+                self._mostrar_msg(mensaje + " Ahora iniciá sesión.", error=False)
+                self._modo = "login"
+                self.ventana.after(1200, self._construir_formulario)
+            else:
+                self._mostrar_msg(mensaje, error=True)
+
+    def _mostrar_msg(self, texto, error=True):
+        # Muestra un mensaje en rojo (error) o verde (éxito)
+        color = COLOR_SANGRE if error else "#4a8c4a"
+        self._label_msg.config(text=texto, fg=color)
 
 # -----------------------------------------------------------------
 # INICIO DEL PROGRAMA
