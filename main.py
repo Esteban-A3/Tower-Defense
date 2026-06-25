@@ -1425,6 +1425,8 @@ class MapaJuego:
     
     def colocar_base(self, fila_centro, col_centro):
         """Coloca la base 2x2 centrada en la celda clickeada y genera la zona verde."""
+        if self.base_colocada:
+            return False, "Ya colocaste la Base Central."
         # La base ocupa 2x2: fila_centro y fila_centro+1, col_centro y col_centro+1
         celdas_base = [
             (fila_centro,     col_centro),
@@ -1506,8 +1508,16 @@ class MapaJuego:
 
     def quitar(self, fila, columna):
         objeto = self.ocupantes.get((fila, columna))
-        if objeto is None or objeto is self.base:
+        if objeto is None:
             return None
+        # Si es la base, limpiar todas sus celdas y resetear zona
+        if objeto is self.base:
+            for c in list(self.base.celdas):
+                self.ocupantes.pop(c, None)
+            self.base.celdas   = []
+            self._zona_defensa = set()
+            self.base_colocada = False
+            return objeto
         del self.ocupantes[(fila, columna)]
         if objeto in self.unidades:
             self.unidades.remove(objeto)
@@ -2017,7 +2027,11 @@ class PantallaPartida:
         tk.Label(panel, text=titulo, bg=COLOR_PIEDRA, fg=COLOR_ORO,font=("Courier", 9, "bold")).pack(anchor="w", padx=10, pady=(12, 4))
 
     def _agregar_item(self, panel, texto, valor, color):
-        item = ItemHerramienta(panel, texto, color,lambda v=valor: self._seleccionar(v))
+        # Buscar costo si tiene
+        nombre_clase = valor.__name__ if valor != "borrar" and valor is not BaseCentral else None
+        costo = COSTOS.get(nombre_clase, None)
+        etiqueta = f"{texto}  (${costo})" if costo is not None else texto
+        item = ItemHerramienta(panel, etiqueta, color,lambda v=valor: self._seleccionar(v))
         item.pack(fill="x", padx=10, pady=2)
         self.items.append((item, valor))
 
