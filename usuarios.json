@@ -1,8 +1,9 @@
 {
     "Admin": {
         "contrasena": "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9",
-        "victorias_defensor": 0,
-        "victorias_atacante": 0
+        "victorias_defensor": 20,
+        "victorias_atacante": 20,
+        "faccion": "Futurista"
     },
     "User1": {
         "contrasena": "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4",
@@ -13,7 +14,7 @@
     "User2": {
         "contrasena": "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4",
         "victorias_defensor": 0,
-        "victorias_atacante": 0,
+        "victorias_atacante": 18,
         "faccion": "Medieval"
     },
     "User3": {
@@ -24,7 +25,7 @@
     },
     "User4": {
         "contrasena": "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4",
-        "victorias_defensor": 0,
+        "victorias_defensor": 14,
         "victorias_atacante": 0,
         "faccion": "Naturaleza"
     }
