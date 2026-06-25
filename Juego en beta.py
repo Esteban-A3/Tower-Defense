@@ -131,12 +131,12 @@ class UnidadRapidaPrueba(_TropaPrueba):
 # SECCIÓN 2 — MAPA (cuadrícula con zona de defensa y zona de ataque)
 # -------------------------------------------------------------------
 class Mapa:
-    FILAS, COLUMNAS = 10, 10
-    TAM_CELDA = 44
-    MARGEN = 28
+    FILAS, COLUMNAS = 15, 15
+    TAM_CELDA = 45
+    MARGEN = 36
 
     # Bloque de celdas alrededor de la base donde el defensor puede construir
-    ZONA_DEFENSA = {(f, c) for f in range(4, 10) for c in range(4, 10)}
+    ZONA_DEFENSA = {(f, c) for f in range(7, 15) for c in range(5, 15)}
 
     COLOR_ZONA_DEFENSA = "#16241a"
     COLOR_ZONA_ATAQUE  = "#1a1510"
@@ -473,9 +473,8 @@ class VentanaPrueba:
                   bg="#1a1510", fg="#d4c5a9", relief=tk.FLAT,
                   font=("Courier", 9)).pack(fill="x", padx=10, pady=(10, 4))
 
-        tk.Button(panel, text="⚔  Simular turno de combate", command=self._siguiente_turno,
-                  bg="#1a1510", fg="#d4c5a9", relief=tk.FLAT,
-                  font=("Courier", 9)).pack(fill="x", padx=10, pady=4)
+        self.btn_accion = tk.Button(panel, text="✔  Defensor listo", command=self._accion_fase,bg="#1a1510", fg="#c9a84c", relief=tk.FLAT,font=("Courier", 9))
+        self.btn_accion.pack(fill="x", padx=10, pady=4)
 
         tk.Button(panel, text="↺  Reiniciar prueba", command=self._nueva_partida,
                   bg="#1a1510", fg="#d4c5a9", relief=tk.FLAT,
@@ -515,6 +514,7 @@ class VentanaPrueba:
     # ── Partida ──
 
     def _nueva_partida(self):
+        self.fase = "defensor"
         self.mapa = Mapa(self.canvas)
         self.motor = MotorCombate(self.mapa, self._log)
         self._limpiar_log()
@@ -540,12 +540,54 @@ class VentanaPrueba:
         self._actualizar_barra()
         if resultado == "atacante":
             self._log("🏆 ¡Base destruida! Gana el ATACANTE.")
+            return
         elif resultado == "defensor":
             self._log("🏆 ¡Todas las unidades eliminadas! Gana el DEFENSOR.")
+            return
+        self._actualizar_panel_por_fase()
+    # Si no terminó, programa el siguiente turno automáticamente en 800 ms
+        self.ventana.after(800, self._siguiente_turno)
+
+    def _accion_fase(self):
+        if self.fase == "defensor":
+        # Pasa al atacante: oculta torres/muros, muestra solo unidades
+            self.fase = "atacante"
+            self.btn_accion.config(text="⚔  Iniciar combate", fg="#c9794a")
+            self._log("✔ Defensor listo. Ahora el Atacante coloca sus unidades.")
+            self._actualizar_panel_por_fase()
+
+        elif self.fase == "atacante":
+        # Inicia el combate automático
+            if not self.mapa.unidades:
+                self._log("⚠ El atacante no colocó ninguna unidad.")
+                return
+            self.fase = "combate"
+            self.btn_accion.config(state="disabled")
+            self._log("⚔ ¡Combate iniciado!")
+            self._siguiente_turno()
+    
+    def _actualizar_panel_por_fase(self):
+    # Durante fase atacante y combate: oculta torres/muros, muestra unidades
+    # Durante fase defensor: muestra todo
+        for item, valor in self.items:
+            es_estructura = valor in (TorreVigia, TorreCanon, TorreSanadora, Muro)
+            es_unidad = valor in (SoldadoPrueba, TanquePrueba, UnidadRapidaPrueba)
+
+        if self.fase == "defensor":
+            item.pack(fill="x", padx=10, pady=2)
+        elif self.fase in ("atacante", "combate"):
+            if es_estructura:
+                item.pack_forget()  # oculta torres y muros
+            else:
+                item.pack(fill="x", padx=10, pady=2)  # muestra unidades y borrar
 
     # ── Clicks ──
 
     def _click_izquierdo(self, evento):
+        if self.fase == "combate" and self.herramienta_actual != "borrar":
+        # Durante combate solo el atacante puede colocar unidades
+            if self.herramienta_actual not in (SoldadoPrueba, TanquePrueba, UnidadRapidaPrueba):
+                return
         celda = self.mapa.celda_desde_click(evento.x, evento.y)
         if celda is None or self.herramienta_actual is None:
             return
@@ -593,6 +635,8 @@ class VentanaPrueba:
         self.texto_log.config(state="normal")
         self.texto_log.delete("1.0", "end")
         self.texto_log.config(state="disabled")
+    
+    
 
 
 # -------------------------------------------------------------------
