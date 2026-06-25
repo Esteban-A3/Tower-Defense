@@ -1715,9 +1715,9 @@ class ItemHerramienta(tk.Frame):
 
 #  CONSTANTES — editar aquí para rebalancear el juego
 #Flujo económico por ronda
-DINERO_INICIAL  = 500   # ambos jugadores arrancan con esto en la ronda 1
-BONO_POR_RONDA  = 150   # suma fija al inicio de cada nueva ronda (desde ronda 2)
-DINERO_MAXIMO   = 800   # tope acumulable; el exceso se descarta
+DINERO_INICIAL  = 1200   # ambos jugadores arrancan con esto en la ronda 1
+BONO_POR_RONDA  = 500   # suma fija al inicio de cada nueva ronda (desde ronda 2)
+DINERO_MAXIMO   = 2000   # tope acumulable; el exceso se descarta
 
 # Costos de defensas
 COSTO_TORRE_VIGIA    =  80
