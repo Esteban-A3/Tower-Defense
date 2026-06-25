@@ -1240,13 +1240,12 @@ class Muro:
 class BaseCentral:
     """Estructura central del defensor. Su destrucción = victoria del atacante."""
     VIDA_MAXIMA = 200
-    CELDAS      = [(7, 7), (7, 8), (8, 7), (8, 8)]
 
     def __init__(self):
         self.nombre      = "Base Central"
         self.vida_maxima = self.VIDA_MAXIMA
         self.vida_actual = self.VIDA_MAXIMA
-        self.celdas      = self.CELDAS
+        self.celdas      = []
 
     def recibir_daño(self, cantidad):
         daño_real        = min(cantidad, self.vida_actual)
@@ -1416,11 +1415,46 @@ class MapaJuego:
     def __init__(self, canvas):
         self.canvas   = canvas
         self.base     = BaseCentral()
-        self.ocupantes = {celda: self.base for celda in self.base.celdas}
+        self.ocupantes = {}
         self.unidades  = []
+        self._zona_defensa = set()   # se calcula al colocar la base
+        self.base_colocada = False
 
     def es_zona_defensa(self, fila, columna):
-        return (fila, columna) in self.ZONA_DEFENSA
+        return (fila, columna) in self._zona_defensa
+    
+    def colocar_base(self, fila_centro, col_centro):
+        """Coloca la base 2x2 centrada en la celda clickeada y genera la zona verde."""
+        # La base ocupa 2x2: fila_centro y fila_centro+1, col_centro y col_centro+1
+        celdas_base = [
+            (fila_centro,     col_centro),
+            (fila_centro,     col_centro + 1),
+            (fila_centro + 1, col_centro),
+            (fila_centro + 1, col_centro + 1),
+        ]
+        # Verificar que todas las celdas estén libres y dentro del mapa
+        for f, c in celdas_base:
+            if not (0 <= f < self.FILAS and 0 <= c < self.COLUMNAS):
+                return False, "La base no cabe ahí."
+            if (f, c) in self.ocupantes:
+                return False, "Esa celda está ocupada."
+
+        self.base.celdas = celdas_base
+        for f, c in celdas_base:
+            self.ocupantes[(f, c)] = self.base
+
+        # Zona verde: radio 3 alrededor de las celdas de la base
+        zona = set()
+        for f, c in celdas_base:
+            for df in range(-3, 4):
+                for dc in range(-3, 4):
+                    nf, nc = f + df, c + dc
+                    if 0 <= nf < self.FILAS and 0 <= nc < self.COLUMNAS:
+                        zona.add((nf, nc))
+        # Excluir las celdas de la propia base de la zona edificable
+        self._zona_defensa = zona - set(celdas_base)
+        self.base_colocada = True
+        return True, ""
 
     def esta_libre(self, fila, columna):
         return (fila, columna) not in self.ocupantes
@@ -1428,11 +1462,18 @@ class MapaJuego:
     def puede_colocar(self, fila, columna, clase):
         if not self.esta_libre(fila, columna):
             return False, "Esa celda ya está ocupada."
+
+        # La base se coloca primero
+        if not self.base_colocada:
+            if clase is not BaseCentral:
+                return False, "Primero debés colocar la Base Central."
+            return True, ""
+
         en_zona = self.es_zona_defensa(fila, columna)
         if issubclass(clase, (Torre, Muro)) and not en_zona:
             return False, "Las torres y muros solo van en la zona de defensa (verde)."
         if issubclass(clase, Unidad) and en_zona:
-            return False, "Las unidades atacantes solo van en la zona de ataque."
+            return False, "Las unidades atacantes no pueden entrar a la zona de defensa."
         return True, ""
 
     def estructuras(self):
@@ -1473,8 +1514,11 @@ class MapaJuego:
         return objeto
 
     def limpiar(self):
-        self.ocupantes = {c: self.base for c in self.base.celdas}
-        self.unidades  = []
+        self.ocupantes     = {}
+        self.unidades      = []
+        self._zona_defensa = set()
+        self.base.celdas   = []
+        self.base_colocada = False
 
     def limpiar_muertos(self):
         for pos, objeto in list(self.ocupantes.items()):
@@ -1898,6 +1942,7 @@ class PantallaPartida:
         self.billetera_def = billetera_def if billetera_def else Billetera()
         self.billetera_atk = billetera_atk if billetera_atk else Billetera()
         self.economia = EconomiaController(self.billetera_def, self.billetera_atk)
+        self.nombres[BaseCentral] = "Base Central"
 
     def mostrar(self):
         for widget in self.ventana.winfo_children():
@@ -1931,6 +1976,9 @@ class PantallaPartida:
         tk.Label(panel, text=f"⚔ {self.jugadores[num_atk]['nombre']}",bg=COLOR_PIEDRA, fg=COLOR_SANGRE,font=("Courier", 9, "bold")).pack(anchor="w", padx=10, pady=(0, 6))
 
         tk.Label(panel, text="─" * 26, bg=COLOR_PIEDRA,fg=COLOR_SEPARADOR, font=("Courier", 7)).pack()
+
+        self._seccion(panel, "BASE")
+        self._agregar_item(panel, "🏰 Base Central", BaseCentral, COLOR_ORO)
 
         self._seccion(panel, "TORRES — DEFENSAS")
         for texto, clase, color in self.TORRES:
@@ -2010,6 +2058,9 @@ class PantallaPartida:
 
     def _accion_fase(self):
         if self.fase == "defensor":
+            if not self.mapa.base_colocada:
+                self._log("⚠ Debés colocar la Base Central antes de continuar.")
+                return
             self.fase = "atacante"
             self.btn_accion.config(text="⚔  Iniciar combate", fg=COLOR_SANGRE)
             num_atk = self.roles["atacante"]
@@ -2064,7 +2115,7 @@ class PantallaPartida:
 
     def _actualizar_panel_por_fase(self):
         for item, valor in self.items:
-            es_estructura = valor in (TorreVigia, TorreCanon, TorreSanadora, Muro)
+            es_estructura = valor in (TorreVigia, TorreCanon, TorreSanadora, Muro, BaseCentral)
             if self.fase == "defensor":
                 item.pack(fill="x", padx=10, pady=2)
             elif self.fase in ("atacante", "combate"):
@@ -2127,6 +2178,16 @@ class PantallaPartida:
             return
         if self.fase == "atacante" and self.herramienta_actual in (TorreVigia, TorreCanon, TorreSanadora, Muro):
             self._log("⚠ Es el turno del Atacante: solo puedes colocar unidades.")
+            return
+        # Colocación especial de la base
+        if self.herramienta_actual is BaseCentral:
+            exito, msg = self.mapa.colocar_base(*celda)
+            if not exito:
+                self._log(f"⚠ {msg}")
+            else:
+                self._log("🏰 Base Central colocada. Ahora podés construir torres en la zona verde.")
+                self.mapa.dibujar()
+                self._actualizar_barra()
             return
 
         puede, motivo = self.mapa.puede_colocar(*celda, self.herramienta_actual)
