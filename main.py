@@ -1071,8 +1071,8 @@ class PantallaRoles: # Pantalla de sorteo de roles para la Ronda 1
         self.ir_continuar(roles)
 
 # ===========================================================
+#Arreglar comentarios desde aqui
 # CLASES DE JUEGO — ESTRUCTURAS, TROPAS, BASE Y MAPA
-# (integradas desde Estructuras.py, Tropas.py y Base_central.py)
 # ===========================================================
 
 # -----------------------------------------------------------
@@ -1235,7 +1235,6 @@ class Muro:
         estado = "en pie" if self.esta_vivo() else "destruido"
         return f"Muro({estado}, {self.vida_actual}hp)"
 
-
 # -----------------------------------------------------------
 # BASE CENTRAL
 # -----------------------------------------------------------
@@ -1381,7 +1380,6 @@ class UnidadRapida(Unidad):
         self.velocidad *= 2
         contexto["log"] = f"{self.nombre} usa Aumento de Velocidad"
 
-
 # -----------------------------------------------------------
 # MAPA
 # -----------------------------------------------------------
@@ -1526,11 +1524,9 @@ class MapaJuego:
                                              text=str(objeto.vida_actual),
                                              fill="white", font=("Courier", 7))
 
-
 # -----------------------------------------------------------
 # MOTOR DE COMBATE
 # -----------------------------------------------------------
-
 class MotorCombate:
 
     def __init__(self, mapa, log_callback):
@@ -1636,7 +1632,6 @@ class MotorCombate:
 # -----------------------------------------------------------
 # WIDGET DE ITEM DEL PANEL
 # -----------------------------------------------------------
-
 class ItemHerramienta(tk.Frame):
     """Botón del panel lateral: muestra color + nombre y se resalta al seleccionarse."""
 
@@ -1676,8 +1671,7 @@ class PantallaPartida:
         ("Unidad Rápida", UnidadRapida,  "#4ac9c0"),
     ]
 
-    def __init__(self, ventana, utils, jugadores, roles, estado_musica,
-                 ir_a_menu, gestor):
+    def __init__(self, ventana, utils, jugadores, roles, estado_musica,ir_a_menu, gestor, score=None, ronda=1, al_terminar_ronda=None):
         self.ventana       = ventana
         self.utils         = utils
         self.jugadores     = jugadores
@@ -1685,12 +1679,14 @@ class PantallaPartida:
         self.estado_musica = estado_musica
         self.ir_a_menu     = ir_a_menu
         self.gestor        = gestor
-
         self.herramienta_actual = None
         self.items              = []
         self.nombres = {"borrar": "Borrar"}
         for texto, clase, _color in self.TORRES + self.UNIDADES:
             self.nombres[clase] = texto
+            self.score            = score or {1: 0, 2: 0}
+        self.ronda            = ronda
+        self.al_terminar_ronda = al_terminar_ronda
 
     def mostrar(self):
         for widget in self.ventana.winfo_children():
@@ -1840,11 +1836,13 @@ class PantallaPartida:
         self._actualizar_barra()
         if resultado == "atacante":
             self._log("🏆 ¡Base destruida! Gana el ATACANTE.")
+            self._ganador_ronda = "atacante"
             self._registrar_victoria("atacante")
             self._mostrar_boton_fin()
             return
         if resultado == "defensor":
             self._log("🏆 ¡Todas las unidades eliminadas! Gana el DEFENSOR.")
+            self._ganador_ronda = "defensor" 
             self._registrar_victoria("defensor")
             self._mostrar_boton_fin()
             return
@@ -1862,16 +1860,27 @@ class PantallaPartida:
                 else:
                     item.pack(fill="x", padx=10, pady=2)
 
-    def _registrar_victoria(self, ganador):
-        """Suma una victoria al jugador ganador en el archivo de usuarios."""
-        num_ganador = self.roles[ganador]
-        nombre      = self.jugadores[num_ganador]["nombre"]
-        self.gestor.actualizar_victorias(nombre, ganador)
+    def _registrar_victoria(self, ganador_rol):
+        # Score global JSON (victorias históricas por rol)
+        num_ganador = self.roles[ganador_rol]
+        nombre = self.jugadores[num_ganador]["nombre"]
+        self.gestor.actualizar_victorias(nombre, ganador_rol)
+
+        # Score de la partida actual (rondas ganadas)
+        self.score[num_ganador] = self.score.get(num_ganador, 0) + 1
 
     def _mostrar_boton_fin(self):
-        self.btn_accion.config(state="normal", text="←  Volver al menú",
-                               fg=COLOR_ORO, command=self._volver_menu)
+    # Determinar quién ganó esta ronda
+        ganador_num = self.roles[self._ganador_ronda]
+    
+        def _ir_a_resultados():
+            if self.al_terminar_ronda:
+                self.al_terminar_ronda(self.roles, ganador_num, self.score, self.ronda)
+            else:
+                self._volver_menu()
 
+        self.btn_accion.config(state="normal",text="Ver resultados  ►",fg=COLOR_ORO,command=_ir_a_resultados)
+    
     def _volver_menu(self):
         self.ventana.geometry("900x620")
         self.ir_a_menu()
@@ -1938,7 +1947,84 @@ class PantallaPartida:
         self.texto_log.config(state="disabled")
 
 
+#Pantalla que muestra los resultados de las rondas
+class PantallaResultadoRonda:
+    """Pantalla intermedia entre rondas: muestra quién ganó y el marcador."""
 
+    RONDAS_PARA_GANAR = 2   # primer jugador en ganar 2 rondas gana la partida
+
+    def __init__(self, ventana, utils, jugadores, roles, ganador_num,score, ronda, ir_a_menu, siguiente_ronda_cb):
+        self.ventana          = ventana
+        self.utils            = utils
+        self.jugadores        = jugadores
+        self.roles            = roles
+        self.ganador_num      = ganador_num
+        self.score            = score          # {1: rondas_j1, 2: rondas_j2}
+        self.ronda            = ronda
+        self.ir_a_menu        = ir_a_menu
+        self.siguiente_ronda  = siguiente_ronda_cb
+
+    def mostrar(self):
+        for widget in self.ventana.winfo_children():
+            widget.destroy()
+        self.ventana.geometry("900x620")
+
+        ancho, alto = 900, 620
+        canvas = tk.Canvas(self.ventana, width=ancho, height=alto,bg=COLOR_FONDO, highlightthickness=0)
+        canvas.place(x=0, y=0)
+        self.utils.dibujar_fondo_piedra(canvas, ancho, alto)
+        canvas.create_rectangle(0, 0, ancho, alto,fill=COLOR_FONDO, stipple="gray50", outline="")
+        self.utils.borde_dorado(canvas, ancho, alto)
+
+        nombre_ganador = self.jugadores[self.ganador_num]["nombre"]
+        partida_terminada = any(v >= self.RONDAS_PARA_GANAR for v in self.score.values())
+
+        # Título
+        titulo = "🏆  FIN DE PARTIDA" if partida_terminada else f"⚔  RESULTADO — RONDA {self.ronda}"
+        tk.Label(self.ventana, text=titulo, bg=COLOR_FONDO, fg=COLOR_ORO,font=("Georgia", 26, "bold")).place(relx=0.5, y=75, anchor="center")
+
+        tk.Label(self.ventana, text="━━━━━━━  ✦  ━━━━━━━", bg=COLOR_FONDO, fg=COLOR_SEPARADOR,font=("Courier", 12)).place(relx=0.5, y=115, anchor="center")
+
+        # Ganador de la ronda 
+        tk.Label(self.ventana, text=f"✦  {nombre_ganador}  ✦",bg=COLOR_FONDO, fg=COLOR_ORO_BRILLANTE,font=("Georgia", 20, "bold")).place(relx=0.5, y=170, anchor="center")
+        tk.Label(self.ventana, text="ganó esta ronda",bg=COLOR_FONDO, fg=COLOR_TEXTO,font=("Courier", 12)).place(relx=0.5, y=205, anchor="center")
+
+        # Marcador de rondas
+        canvas.create_rectangle(200, 245, 700, 370,fill=COLOR_PIEDRA, outline=COLOR_SEPARADOR, width=2)
+        canvas.create_rectangle(202, 247, 698, 368,fill="", outline=COLOR_ORO, width=1)
+
+        tk.Label(self.ventana, text="MARCADOR DE PARTIDA",bg=COLOR_PIEDRA, fg=COLOR_ORO,font=("Courier", 10, "bold")).place(relx=0.5, y=268, anchor="center")
+
+        n1 = self.jugadores[1]["nombre"]
+        n2 = self.jugadores[2]["nombre"]
+        s1 = self.score.get(1, 0)
+        s2 = self.score.get(2, 0)
+
+        tk.Label(self.ventana,text=f"🛡  {n1}   {s1}  —  {s2}   {n2}  ⚔",bg=COLOR_PIEDRA, fg=COLOR_TEXTO,font=("Georgia", 18, "bold")).place(relx=0.5, y=318, anchor="center")
+
+        # ── Botones ──
+        if partida_terminada:
+            # Ganador global
+            ganador_partida_num = max(self.score, key=self.score.get)
+            nombre_partida = self.jugadores[ganador_partida_num]["nombre"]
+            tk.Label(self.ventana,text=f"🎖  {nombre_partida} gana la partida  🎖",bg=COLOR_FONDO, fg=COLOR_ORO_BRILLANTE,font=("Georgia", 15, "bold")).place(relx=0.5, y=415, anchor="center")
+
+            self.utils.boton_medieval(self.ventana, "←  Volver al menú", self.ir_a_menu, COLOR_TEXTO).place(relx=0.5, y=480, anchor="center")
+
+        else:
+            # Roles invertidos para la próxima ronda
+            nuevo_def = self.roles["atacante"]
+            nuevo_atk = self.roles["defensor"]
+            n_def = self.jugadores[nuevo_def]["nombre"]
+            n_atk = self.jugadores[nuevo_atk]["nombre"]
+
+            tk.Label(self.ventana,text=f"Ronda {self.ronda + 1}:  🛡 {n_def}  defiende  ·  {n_atk}  ataca ⚔",bg=COLOR_FONDO, fg=COLOR_TEXTO_TENUE, font=("Courier", 11)).place(relx=0.5, y=415, anchor="center")
+
+            self.utils.boton_medieval(self.ventana, f"⚔  JUGAR RONDA {self.ronda + 1}",lambda: self.siguiente_ronda(self.roles, self.score, self.ronda),COLOR_ORO).place(relx=0.5, y=470, anchor="center")
+
+            self.utils.boton_medieval(self.ventana, "←  Abandonar partida", self.ir_a_menu, COLOR_TEXTO).place(relx=0.5, y=520, anchor="center")
+
+        tk.Label(self.ventana,text="ITCR  ·  Introducción a la Programación  ·  2026",bg=COLOR_FONDO, fg=COLOR_TEXTO_TENUE, font=FUENTE_PEQUENA).place(relx=0.5, rely=0.97, anchor="center")
 
 # INICIO DEL PROGRAMA
 # Aquí se crea la ventana, los servicios compartidos, y se navega
@@ -2004,12 +2090,22 @@ def _jugador_sin_faccion():
             return numero
     return None
 
-def ir_a_partida(roles): # Se llama después de que se sortean los roles y se inicia la partida
-    print(f"[DEBUG] Defensor: Jugador {roles['defensor']} "
-          f"({jugadores[roles['defensor']]['nombre']}) | "
-          f"Atacante: Jugador {roles['atacante']} "
-          f"({jugadores[roles['atacante']]['nombre']})")
-    # TODO: pantalla del tablero de juego (Ronda 1)
+def ir_a_partida(roles, score=None, ronda=1):
+    if score is None:
+        score = {1: 0, 2: 0}   # {num_jugador: rondas_ganadas}
+    pantalla = PantallaPartida(ventana, utils, jugadores, roles, estado_musica,ir_a_menu_actual, gestor,score=score, ronda=ronda,al_terminar_ronda=_al_terminar_ronda)
+    pantalla.mostrar()
+
+def _al_terminar_ronda(roles, ganador_num, score, ronda):
+    """Se llama desde PantallaPartida cuando termina el combate."""
+    pantalla = PantallaResultadoRonda(ventana, utils, jugadores, roles, ganador_num,score, ronda,ir_a_menu_actual, _siguiente_ronda)
+    pantalla.mostrar()
+
+def _siguiente_ronda(roles_anteriores, score, ronda):
+    """Invierte los roles y lanza la siguiente ronda, o termina la partida."""
+    # Invertir roles
+    roles_nuevos = {"defensor": roles_anteriores["atacante"],"atacante": roles_anteriores["defensor"]}
+    ir_a_partida(roles_nuevos, score=score, ronda=ronda + 1)
 
 def ir_a_top(): # Muestra la pantalla de ranking de jugadores según victorias
     pantalla = PantallaTop(ventana, utils, gestor, estado_musica, ir_a_menu_actual)
