@@ -7,13 +7,9 @@ import random
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 pygame.mixer.init()
 
-# -----------------------------------------------------------------
-# Defensa y Asalto de Base — main.py
-# Curso: Introducción a la Programación — ITCR
-# Integrantes: Esteban, Dominick Robles
-# Descripción: Archivo principal del juego. Contiene toda la lógica,
-#              ventanas y clases del programa.
-# -----------------------------------------------------------------
+
+# CONSTANTES Y CONFIGURACIONES
+
 
 #Paleta de colores
 COLOR_FONDO         = "#0d0a07"
@@ -36,7 +32,7 @@ FUENTE_LABEL     = ("Courier", 11)
 FUENTE_PEQUENA   = ("Courier", 8)
 FUENTE_ENTRY     = ("Courier", 13)
 
-# SECCIÓN 1 — UTILIDADES
+# UTILIDADES
 # Clase con funciones compartidas por todas las pantallas:
 # fondo, parpadeo, hover y música.
 class Utilidades:
@@ -68,7 +64,7 @@ class Utilidades:
         # Alterna el color del label entre color_on y color_off cada ms milisegundos
         label.config(fg=color_on if estado[0] else color_off)
         estado[0] = not estado[0]
-        label.after(ms, self.parpadeo, label, estado, color_on, color_off, ms)
+        label.after(ms, self.parpadeo, label, estado, color_on, color_off, ms)  
 
     # Interacción
     def hover(self, boton, color_normal, color_hover):
@@ -130,7 +126,7 @@ class Utilidades:
         estado_musica["actual"]  = ""
 
 
-# SECCIÓN 2 — GESTOR DE USUARIOS
+# GESTOR DE USUARIOS
 # Clase que maneja toda la lógica de registro, login y ranking.
 # Lee y escribe en un archivo JSON. No depende de Tkinter.
 class GestorUsuarios:
@@ -226,11 +222,11 @@ class GestorUsuarios:
             return datos[nombre].get("faccion", None)
         return None
 
-# SECCIÓN 3 — PANTALLA INTRO
+#PANTALLA INTRO
 # Pantalla de inicio del juego: "presiona cualquier tecla".
 class PantallaIntro:
 
-    def __init__(self, ventana, utils, estado_musica, ir_a_login):
+    def __init__(self, ventana, utils, estado_musica, ir_a_login): # recibe callback para navegar al login
         self.ventana       = ventana
         self.utils         = utils          # instancia de Utilidades
         self.estado_musica = estado_musica  # dict compartido con toda la app
@@ -246,7 +242,7 @@ class PantallaIntro:
         ancho = 900
         alto  = 620
 
-        # ── Canvas de fondo ──
+        # Canvas de fondo con cuadrícula de piedra y marco dorado
         canvas = tk.Canvas(self.ventana, width=ancho, height=alto,
                            bg=COLOR_FONDO, highlightthickness=0)
         canvas.place(x=0, y=0)
@@ -264,7 +260,7 @@ class PantallaIntro:
 
         self.utils.borde_dorado(canvas, ancho, alto)
 
-        # ── Frame central ──
+        # Frame central para los widgets de texto
         frame = tk.Frame(self.ventana, bg=COLOR_FONDO)
         frame.place(relx=0.5, rely=0.5, anchor="center")
 
@@ -321,7 +317,7 @@ class PantallaIntro:
         self.ir_a_login()
 
 
-# SECCIÓN 4 — PANTALLA LOGIN
+# PANTALLA LOGIN
 # Formulario de inicio de sesión y registro de usuarios.
 class PantallaLogin:
 
@@ -464,7 +460,7 @@ class PantallaLogin:
         color = COLOR_SANGRE if error else "#4a8c4a"
         self._label_msg.config(text=texto, fg=color)
 
-# SECCIÓN 5 — PANTALLA MENÚ PRINCIPAL
+# PANTALLA MENÚ PRINCIPAL
 # Pantalla que se muestra después del login. Permite navegar a:
 # Jugar, Mejores Puntuaciones, Cómo Jugar y Cuenta. Incluye un
 # botón en la esquina inferior derecha para pausar/reanudar música.
@@ -517,10 +513,10 @@ class PantallaMenu:
             btn = self.utils.boton_medieval(frame, texto, comando, COLOR_TEXTO)
             btn.pack(pady=14)
         
-        # ── Pie de página ──
+        # Pie de página
         tk.Label(self.ventana,text="ITCR  ·  Introducción a la Programación  ·  2026",bg=COLOR_FONDO, fg=COLOR_TEXTO_TENUE,font=FUENTE_PEQUENA).place(relx=0.5, rely=0.97, anchor="center")
 
-        # ── Botón de música, esquina inferior derecha ──
+        # botón de música en la esquina inferior derecha
         self._construir_boton_musica()
 
     def _construir_boton_musica(self):
@@ -537,7 +533,7 @@ class PantallaMenu:
         nuevo_texto = "♪  MÚSICA" if self.estado_musica["activa"] else "✕  MÚSICA"
         self._btn_musica.config(text=nuevo_texto)
 
-# SECCIÓN 6 — PANTALLA MEJORES PUNTUACIONES
+# mejor puntuación
 # Muestra los dos rankings (top 5 defensores y top 5 atacantes)
 # usando GestorUsuarios.obtener_ranking().
 class PantallaTop:
@@ -616,7 +612,7 @@ class PantallaTop:
             tk.Label(fila, text=f"{victorias} {icono}", bg=COLOR_PIEDRA, fg=COLOR_TEXTO_TENUE, font=("Courier", 11), width=8, anchor="e").pack(side="left")
             y += 50
 
-# SECCIÓN 7 — PANTALLA CUENTA
+# USUARIO LOGUEADO
 # Muestra los datos del usuario logueado: nombre y victorias como
 # defensor y como atacante. Permite volver al menú o cerrar sesión.
 class PantallaCuenta:
@@ -688,7 +684,7 @@ class PantallaCuenta:
 
         self._construir_pagina()
         
-    def _construir_pagina(self):
+    def _construir_pagina(self): # Construye la página actual (1 o 2) con los datos del usuario correspondiente
         for w in self._frame.winfo_children():
             w.destroy()
         
@@ -726,27 +722,27 @@ class PantallaCuenta:
         tk.Label(fila, text=etiqueta,bg=COLOR_PIEDRA, fg=COLOR_TEXTO_TENUE,font=FUENTE_LABEL, anchor="w").pack(side="left")
         tk.Label(fila, text=str(valor),bg=COLOR_PIEDRA, fg=COLOR_TEXTO,font=("Courier", 11, "bold"), anchor="e").pack(side="right")
 
-    def _pagina_anterior(self):
+    def _pagina_anterior(self): # Muestra la página anterior (jugador 1) si es posible
         if self._pagina > 1:
             self._pagina -= 1
             self._construir_pagina()
 
-    def _pagina_siguiente(self):
+    def _pagina_siguiente(self): # Muestra la página siguiente (jugador 2) si es posible
         if self._pagina < 2:
             self._pagina += 1
             self._construir_pagina()
 
-    def _cerrar_sesion(self):
+    def _cerrar_sesion(self): 
         # Detiene la música y vuelve a la pantalla de login
         self.utils.parar_musica(self.estado_musica)
         self.ir_a_login()
 
 
-# SECCIÓN 7.5 — PANTALLA SELECCIÓN DE FACCIÓN
+# PANTALLA SELECCIÓN DE FACCIÓN
 # Permite vincular permanentemente una facción al perfil del
 # usuario. La elección se guarda en usuarios.json mediante
 # GestorUsuarios.asignar_faccion().
-class PantallaFaccion:
+class PantallaFaccion: # Pantalla de selección de facción para un jugador
 
     FACCIONES = [
         {
@@ -770,6 +766,7 @@ class PantallaFaccion:
     ]
 
     def __init__(self, ventana, utils, gestor, jugadores, numero_jugador, ir_volver, forzado=False):
+        # Inicializa la pantalla de selección de facción para un jugador
         self.ventana        = ventana
         self.utils          = utils
         self.gestor         = gestor
@@ -781,7 +778,7 @@ class PantallaFaccion:
         self._seleccion      = self.gestor.obtener_faccion(self.usuario["nombre"])
         self._botones_carta  = []
 
-    def mostrar(self):
+    def mostrar(self): # Limpia la ventana y construye la pantalla de selección de facción
         for widget in self.ventana.winfo_children():
             widget.destroy()
 
@@ -841,6 +838,7 @@ class PantallaFaccion:
         tk.Label(carta, text=faccion["descripcion"], bg=COLOR_PIEDRA, fg=COLOR_TEXTO_TENUE, font=("Courier", 9), justify="center").pack(padx=8)
 
         def seleccionar(e=None, nombre=faccion["nombre"]):
+            # Marca la facción seleccionada y actualiza el borde de las tarjetas
             self._seleccion = nombre
             self._actualizar_cartas()
 
@@ -858,7 +856,8 @@ class PantallaFaccion:
             else:
                 carta.config(highlightbackground=COLOR_SEPARADOR, highlightthickness=2)
 
-    def _confirmar(self):
+    def _confirmar(self): 
+        # Confirma la selección de facción y la guarda en usuarios.json mediante GestorUsuarios.asignar_faccion()
         if not self._seleccion:
             self._label_msg.config(text="Elegí una facción antes de continuar.", fg=COLOR_SANGRE)
             return
@@ -869,7 +868,7 @@ class PantallaFaccion:
         if exito and self.forzado:
             self.ventana.after(1000, self.ir_volver)
 
-# SECCIÓN 8 — PANTALLA CÓMO JUGAR
+# Pantalla de guia de juego, que explica las mecánicas principales.
 # Muestra las reglas del juego en formato de "libro" paginado,
 # basadas en las reglas oficiales del proyecto.
 class PantallaComoJugar:
@@ -938,14 +937,15 @@ class PantallaComoJugar:
         },
     ]
 
-    def __init__(self, ventana, utils, estado_musica, ir_a_menu):
+    def __init__(self, ventana, utils, estado_musica, ir_a_menu): 
+        # Inicializa la pantalla de "Cómo Jugar" con la ventana, utilidades, estado de música y callback para volver al menú
         self.ventana       = ventana
         self.utils         = utils
         self.estado_musica = estado_musica
         self.ir_a_menu      = ir_a_menu
         self._pagina        = 0
 
-    def mostrar(self):
+    def mostrar(self): # Limpia la ventana y construye la pantalla de "Cómo Jugar"
         for widget in self.ventana.winfo_children():
             widget.destroy()
 
@@ -982,7 +982,7 @@ class PantallaComoJugar:
 
         self._construir_pagina()
 
-    def _construir_pagina(self):
+    def _construir_pagina(self): # Construye la página actual de reglas según self._pagina
         for w in self._frame.winfo_children():
             w.destroy()
 
@@ -999,22 +999,22 @@ class PantallaComoJugar:
         self._btn_anterior.config(state="disabled" if self._pagina == 0 else "normal")
         self._btn_siguiente.config(state="disabled" if self._pagina == len(self.REGLAS) - 1 else "normal")
 
-    def _pagina_anterior(self):
+    def _pagina_anterior(self): # Muestra la página anterior de reglas si es posible
         if self._pagina > 0:
             self._pagina -= 1
             self._construir_pagina()
 
-    def _pagina_siguiente(self):
+    def _pagina_siguiente(self): # Muestra la página siguiente de reglas si es posible
         if self._pagina < len(self.REGLAS) - 1:
             self._pagina += 1
             self._construir_pagina()
 
-# -----------------------------------------------------------------
-# SECCIÓN 9 — PANTALLA SORTEO DE ROLES
+
+# PANTALLA SORTEO DE ROLES
 # Antes de iniciar la Ronda 1, se sortea al azar quién será el
 # Defensor y quién el Atacante.
-# -----------------------------------------------------------------
-class PantallaRoles:
+
+class PantallaRoles: # Pantalla de sorteo de roles para la Ronda 1
 
     def __init__(self, ventana, utils, jugadores, ir_a_menu, ir_continuar):
         self.ventana      = ventana
@@ -1026,7 +1026,7 @@ class PantallaRoles:
         self.numero_defensor = random.choice([1, 2])
         self.numero_atacante = 2 if self.numero_defensor == 1 else 1
 
-    def mostrar(self):
+    def mostrar(self): # Limpia la ventana y construye la pantalla de sorteo de roles
         for widget in self.ventana.winfo_children():
             widget.destroy()
 
@@ -1068,7 +1068,7 @@ class PantallaRoles:
 
         tk.Label(self.ventana,text="ITCR  ·  Introducción a la Programación  ·  2026",bg=COLOR_FONDO, fg=COLOR_TEXTO_TENUE,font=FUENTE_PEQUENA).place(relx=0.5, rely=0.97, anchor="center")
 
-    def _continuar(self):
+    def _continuar(self): # Llama al callback ir_continuar con los roles sorteados para iniciar la partida
         roles = {"defensor": self.numero_defensor, "atacante": self.numero_atacante}
         self.ir_continuar(roles)
 
@@ -1112,12 +1112,12 @@ def ir_a_login_jugador2(usuario1):
     pantalla = PantallaLogin(ventana, utils, gestor, 2, ir_a_menu,nombre_excluido=usuario1["nombre"])
     pantalla.mostrar()
 
-def ir_a_menu(usuario2):
+def ir_a_menu(usuario2): #  Se llama después de que el segundo jugador inicia sesión correctamente
     global jugadores
     jugadores[2] = usuario2
     ir_a_menu_actual()
 
-def ir_a_menu_actual():
+def ir_a_menu_actual(): # Muestra el menú principal con los dos jugadores ya logueados
     pantalla = PantallaMenu(ventana, utils, gestor, jugadores, estado_musica,ir_a_jugar, ir_a_top, ir_a_como_jugar, ir_a_cuenta)
     pantalla.mostrar()
 
@@ -1138,29 +1138,29 @@ def _jugador_sin_faccion():
             return numero
     return None
 
-def ir_a_partida(roles):
+def ir_a_partida(roles): # Se llama después de que se sortean los roles y se inicia la partida
     print(f"[DEBUG] Defensor: Jugador {roles['defensor']} "
           f"({jugadores[roles['defensor']]['nombre']}) | "
           f"Atacante: Jugador {roles['atacante']} "
           f"({jugadores[roles['atacante']]['nombre']})")
     # TODO: pantalla del tablero de juego (Ronda 1)
 
-def ir_a_top():
+def ir_a_top(): # Muestra la pantalla de ranking de jugadores según victorias
     pantalla = PantallaTop(ventana, utils, gestor, estado_musica, ir_a_menu_actual)
     pantalla.mostrar()
 
-def ir_a_como_jugar():
+def ir_a_como_jugar(): # Muestra la pantalla de guía de juego con las reglas y mecánicas
     pantalla = PantallaComoJugar(ventana, utils, estado_musica, ir_a_menu_actual)
     pantalla.mostrar()
 
-def ir_a_cuenta(pagina_inicial=1):
+def ir_a_cuenta(pagina_inicial=1): # Muestra la pantalla de cuenta del usuario logueado, con la página inicial (1 o 2)
     pantalla = PantallaCuenta(ventana, utils, gestor, jugadores, estado_musica,ir_a_menu_actual, ir_a_login_jugador1, ir_a_faccion, pagina_inicial)
     pantalla.mostrar()
 
-def ir_a_faccion(numero_jugador):
+def ir_a_faccion(numero_jugador): # Muestra la pantalla de selección de facción para el jugador indicado (1 o 2)
     pantalla = PantallaFaccion(ventana, utils, gestor, jugadores, numero_jugador,lambda: ir_a_cuenta(numero_jugador), forzado=False)
     pantalla.mostrar()
 
-# ── Arrancar en la intro ──
+# Inicia el programa mostrando la pantalla de introducción
 ir_a_intro()
 ventana.mainloop()
