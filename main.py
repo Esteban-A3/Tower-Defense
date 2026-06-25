@@ -1533,10 +1533,11 @@ class MotorCombate:
         self.log  = log_callback
 
     def jugar_turno(self):
+        self._eventos = []
         self._turno_unidades()
         self._turno_torres()
         self.mapa.limpiar_muertos()
-        return self._revisar_victoria()
+        return self._revisar_victoria(), self._eventos
 
     def _turno_unidades(self):
         for unidad in list(self.mapa.unidades):
@@ -1544,22 +1545,22 @@ class MotorCombate:
                 self._mover_o_atacar(unidad)
 
     def _mover_o_atacar(self, unidad):
-        celda_base = min(self.mapa.base.celdas,
-                         key=lambda c: max(abs(c[0] - unidad.fila),
-                                           abs(c[1] - unidad.columna)))
+        celda_base = min(self.mapa.base.celdas,key=lambda c: max(abs(c[0] - unidad.fila),abs(c[1] - unidad.columna)))
 
         if unidad.puede_atacar_a(*celda_base):
             daño = unidad.atacar(self.mapa.base)
-            self.log(f"⚔ {unidad.nombre} ataca la Base Central: {daño} daño "
-                     f"(vida base: {self.mapa.base.vida_actual})")
+            self.log(f"⚔ {unidad.nombre} ataca la Base Central: {daño} daño "f"(vida base: {self.mapa.base.vida_actual})")
+            if daño > 0:
+                self._eventos.append({"tipo": "daño_base", "cantidad": daño})
             self._intentar_habilidad(unidad, self.mapa.base)
             return
 
         objetivo = self._estructura_en_alcance(unidad)
         if objetivo:
             daño = unidad.atacar(objetivo)
-            self.log(f"⚔ {unidad.nombre} ataca {objetivo.nombre}: "
-                     f"{daño} daño (vida: {objetivo.vida_actual})")
+            self.log(f"⚔ {unidad.nombre} ataca {objetivo.nombre}: " f"{daño} daño (vida: {objetivo.vida_actual})")
+            if not objetivo.esta_viva():
+                self._eventos.append({"tipo": "defensa_destruida", "objeto": objetivo})
             self._intentar_habilidad(unidad, objetivo)
             return
 
@@ -1608,8 +1609,10 @@ class MotorCombate:
                 objetivo = min(en_rango, key=lambda u: u.vida_actual)
                 daño     = torre.atacar(objetivo)
                 if daño:
-                    self.log(f"🛡 {torre.nombre} ataca a {objetivo.nombre}: "
+                    self.log(f"🛡 {torre.nombre} ataca a {objetivo.nombre}: " 
                              f"{daño} daño (vida: {objetivo.vida_actual})")
+                if not objetivo.esta_viva():
+                    self._eventos.append({"tipo": "unidad_eliminada", "objeto": objetivo})
 
             torres_cercanas = [t for t in self.mapa.torres()
                                if t is not torre and t.esta_viva()
@@ -1697,8 +1700,8 @@ COSTOS = {
     "TorreSanadora": COSTO_TORRE_SANADORA,
     "Muro":          COSTO_MURO,
     "Tanque":        COSTO_TANQUE,
-    "Artilleria":    COSTO_ARTILLERIA,
-    "Peon":          COSTO_PEON,
+    "Soldado":    COSTO_ARTILLERIA,
+    "UnidadRapida":          COSTO_PEON,
 }
 
 # Tabla de recompensas por nombre de clase
@@ -1874,7 +1877,7 @@ class PantallaPartida:
         ("Unidad Rápida", UnidadRapida,  "#4ac9c0"),
     ]
 
-    def __init__(self, ventana, utils, jugadores, roles, estado_musica,ir_a_menu, gestor, score=None, ronda=1, al_terminar_ronda=None):
+    def __init__(self, ventana, utils, jugadores, roles, estado_musica,ir_a_menu, gestor, score=None, ronda=1,al_terminar_ronda=None,billetera_def=None, billetera_atk=None):
         self.ventana       = ventana
         self.utils         = utils
         self.jugadores     = jugadores
@@ -1890,6 +1893,11 @@ class PantallaPartida:
             self.score            = score or {1: 0, 2: 0}
         self.ronda            = ronda
         self.al_terminar_ronda = al_terminar_ronda
+        num_def = roles["defensor"]
+        num_atk = roles["atacante"]
+        self.billetera_def = billetera_def if billetera_def else Billetera()
+        self.billetera_atk = billetera_atk if billetera_atk else Billetera()
+        self.economia = EconomiaController(self.billetera_def, self.billetera_atk)
 
     def mostrar(self):
         for widget in self.ventana.winfo_children():
@@ -1912,22 +1920,17 @@ class PantallaPartida:
         contenedor = tk.Frame(self.ventana, bg=COLOR_FONDO)
         contenedor.pack(padx=10, pady=10)
 
-        # ── Panel lateral ──
+        # Panel lateral
         panel = tk.Frame(contenedor, bg=COLOR_PIEDRA, width=220)
         panel.grid(row=0, column=0, sticky="ns", padx=(0, 10))
 
         # Cabecera con nombres de jugadores y roles
         num_def = self.roles["defensor"]
         num_atk = self.roles["atacante"]
-        tk.Label(panel, text=f"🛡 {self.jugadores[num_def]['nombre']}",
-                 bg=COLOR_PIEDRA, fg=COLOR_ORO_BRILLANTE,
-                 font=("Courier", 9, "bold")).pack(anchor="w", padx=10, pady=(10, 0))
-        tk.Label(panel, text=f"⚔ {self.jugadores[num_atk]['nombre']}",
-                 bg=COLOR_PIEDRA, fg=COLOR_SANGRE,
-                 font=("Courier", 9, "bold")).pack(anchor="w", padx=10, pady=(0, 6))
+        tk.Label(panel, text=f"🛡 {self.jugadores[num_def]['nombre']}",bg=COLOR_PIEDRA, fg=COLOR_ORO_BRILLANTE,font=("Courier", 9, "bold")).pack(anchor="w", padx=10, pady=(10, 0))
+        tk.Label(panel, text=f"⚔ {self.jugadores[num_atk]['nombre']}",bg=COLOR_PIEDRA, fg=COLOR_SANGRE,font=("Courier", 9, "bold")).pack(anchor="w", padx=10, pady=(0, 6))
 
-        tk.Label(panel, text="─" * 26, bg=COLOR_PIEDRA,
-                 fg=COLOR_SEPARADOR, font=("Courier", 7)).pack()
+        tk.Label(panel, text="─" * 26, bg=COLOR_PIEDRA,fg=COLOR_SEPARADOR, font=("Courier", 7)).pack()
 
         self._seccion(panel, "TORRES — DEFENSAS")
         for texto, clase, color in self.TORRES:
@@ -1940,48 +1943,33 @@ class PantallaPartida:
         self._seccion(panel, "HERRAMIENTAS")
         self._agregar_item(panel, "Borrar", "borrar", COLOR_SANGRE)
 
-        tk.Button(panel, text="🗑  Limpiar mapa", command=self._limpiar,
-                  bg=COLOR_PIEDRA, fg=COLOR_TEXTO, relief=tk.FLAT,
-                  font=("Courier", 9)).pack(fill="x", padx=10, pady=(10, 4))
+        tk.Button(panel, text="🗑  Limpiar mapa", command=self._limpiar, bg=COLOR_PIEDRA, fg=COLOR_TEXTO, relief=tk.FLAT,font=("Courier", 9)).pack(fill="x", padx=10, pady=(10, 4))
 
-        self.btn_accion = tk.Button(panel, text="✔  Defensor listo",
-                                    command=self._accion_fase,
-                                    bg=COLOR_PIEDRA, fg=COLOR_ORO,
-                                    relief=tk.FLAT, font=("Courier", 9))
+        self.btn_accion = tk.Button(panel, text="✔  Defensor listo",command=self._accion_fase,bg=COLOR_PIEDRA, fg=COLOR_ORO,relief=tk.FLAT, font=("Courier", 9))
         self.btn_accion.pack(fill="x", padx=10, pady=4)
 
-        tk.Button(panel, text="←  Volver al menú", command=self._volver_menu,
-                  bg=COLOR_PIEDRA, fg=COLOR_TEXTO, relief=tk.FLAT,
-                  font=("Courier", 9)).pack(fill="x", padx=10, pady=(4, 12))
+        tk.Button(panel, text="←  Volver al menú", command=self._volver_menu,bg=COLOR_PIEDRA, fg=COLOR_TEXTO, relief=tk.FLAT,font=("Courier", 9)).pack(fill="x", padx=10, pady=(4, 12))
 
-        # ── Canvas del mapa ──
-        self.canvas = tk.Canvas(contenedor, width=ancho_canvas, height=alto_canvas,
-                                bg=COLOR_FONDO, highlightthickness=0)
+        # Canvas del mapa
+        self.canvas = tk.Canvas(contenedor, width=ancho_canvas, height=alto_canvas, bg=COLOR_FONDO, highlightthickness=0)
         self.canvas.grid(row=0, column=1)
         self.canvas.bind("<Button-1>", self._click_izquierdo)
         self.canvas.bind("<Button-3>", self._click_derecho)
 
-        # ── Barra de estado ──
-        self.barra_estado = tk.Label(self.ventana, text="", bg=COLOR_PIEDRA,
-                                     fg=COLOR_TEXTO, font=("Courier", 9),
-                                     anchor="w", justify="left")
+        # Barra de estado
+        self.barra_estado = tk.Label(self.ventana, text="", bg=COLOR_PIEDRA,fg=COLOR_TEXTO, font=("Courier", 9),anchor="w", justify="left")
         self.barra_estado.pack(fill="x", padx=10, pady=(0, 4))
 
-        tk.Label(self.ventana, text="Registro:", bg=COLOR_FONDO,
-                 fg=COLOR_TEXTO_TENUE, font=("Courier", 8)).pack(anchor="w", padx=10)
+        tk.Label(self.ventana, text="Registro:", bg=COLOR_FONDO,fg=COLOR_TEXTO_TENUE, font=("Courier", 8)).pack(anchor="w", padx=10)
 
-        self.texto_log = tk.Text(self.ventana, height=6, bg=COLOR_PIEDRA,
-                                 fg=COLOR_TEXTO, font=("Courier", 8),
-                                 state="disabled")
+        self.texto_log = tk.Text(self.ventana, height=6, bg=COLOR_PIEDRA,fg=COLOR_TEXTO, font=("Courier", 8),state="disabled")
         self.texto_log.pack(fill="x", padx=10, pady=(0, 10))
 
     def _seccion(self, panel, titulo):
-        tk.Label(panel, text=titulo, bg=COLOR_PIEDRA, fg=COLOR_ORO,
-                 font=("Courier", 9, "bold")).pack(anchor="w", padx=10, pady=(12, 4))
+        tk.Label(panel, text=titulo, bg=COLOR_PIEDRA, fg=COLOR_ORO,font=("Courier", 9, "bold")).pack(anchor="w", padx=10, pady=(12, 4))
 
     def _agregar_item(self, panel, texto, valor, color):
-        item = ItemHerramienta(panel, texto, color,
-                               lambda v=valor: self._seleccionar(v))
+        item = ItemHerramienta(panel, texto, color,lambda v=valor: self._seleccionar(v))
         item.pack(fill="x", padx=10, pady=2)
         self.items.append((item, valor))
 
@@ -2007,9 +1995,17 @@ class PantallaPartida:
         self._actualizar_barra()
 
     def _limpiar(self):
+        total = 0
+        for pieza in list(self.mapa.ocupantes.values()):
+            costo = COSTOS.get(type(pieza).__name__, 0)
+            total += costo
         self.mapa.limpiar()
+        if self.fase == "defensor":
+            self.billetera_def.ganar(total)
+        else:
+            self.billetera_atk.ganar(total)
         self.mapa.dibujar()
-        self._log("🗑 Mapa limpiado (la base central se mantiene).")
+        self._log(f"🗑 Mapa limpiado — se devuelven ${total}")
         self._actualizar_barra()
 
     def _accion_fase(self):
@@ -2034,7 +2030,21 @@ class PantallaPartida:
         if not self.mapa.unidades:
             self._log("⚠ No hay unidades en el mapa.")
             return
-        resultado = self.motor.jugar_turno()
+        resultado, eventos = self.motor.jugar_turno()
+        for ev in eventos:
+            if ev["tipo"] == "unidad_eliminada":
+                ganado = self.economia.unidad_eliminada(ev["objeto"])
+                if ganado:
+                    self._log(f"💰 Defensor gana ${ganado}")
+            elif ev["tipo"] == "defensa_destruida":
+                ganado = self.economia.defensa_destruida(ev["objeto"])
+                if ganado:
+                    self._log(f"💰 Atacante gana ${ganado}")
+            elif ev["tipo"] == "daño_base":
+                ganado = self.economia.daño_a_base(ev["cantidad"])
+                if ganado:
+                    self._log(f"💰 Atacante gana ${ganado} por daño a base")
+
         self.mapa.dibujar()
         self._actualizar_barra()
         if resultado == "atacante":
@@ -2078,7 +2088,7 @@ class PantallaPartida:
     
         def _ir_a_resultados():
             if self.al_terminar_ronda:
-                self.al_terminar_ronda(self.roles, ganador_num, self.score, self.ronda)
+                self.al_terminar_ronda(self.roles, ganador_num, self.score, self.ronda, self.billetera_def, self.billetera_atk)
             else:
                 self._volver_menu()
 
@@ -2098,9 +2108,17 @@ class PantallaPartida:
             return
 
         if self.herramienta_actual == "borrar":
-            if self.mapa.quitar(*celda):
-                self.mapa.dibujar()
-                self._actualizar_barra()
+            pieza = self.mapa.ocupantes.get(celda)
+            if pieza and self.mapa.quitar(*celda):
+                nombre_clase = type(pieza).__name__
+                costo = COSTOS.get(nombre_clase, 0)
+                if self.fase == "defensor":
+                    self.billetera_def.ganar(costo)
+                else:
+                    self.billetera_atk.ganar(costo)
+            self._log(f"↩ {pieza.nombre} retirado — se devuelven ${costo}")
+            self.mapa.dibujar()
+            self._actualizar_barra()
             return
 
         # Valida que la herramienta sea válida para la fase actual
@@ -2116,13 +2134,36 @@ class PantallaPartida:
             self._log(f"⚠ {motivo}")
             return
 
+        nombre_clase = self.herramienta_actual.__name__
+        if self.fase == "defensor":
+            exito, msg = self.billetera_def.comprar(nombre_clase)
+        else:
+            exito, msg = self.billetera_atk.comprar(nombre_clase)
+
+        if not exito:
+            self._log(f"⚠ {msg}")
+            return
+
         self.mapa.colocar(*celda, self.herramienta_actual())
         self.mapa.dibujar()
         self._actualizar_barra()
+        self._log(f"✔ {msg}")
 
     def _click_derecho(self, evento):
+        if self.fase == "combate":
+            return
         celda = self.mapa.celda_desde_click(evento.x, evento.y)
-        if celda and self.mapa.quitar(*celda):
+        if not celda:
+            return
+        pieza = self.mapa.ocupantes.get(celda)
+        if pieza and self.mapa.quitar(*celda):
+            nombre_clase = type(pieza).__name__
+            costo = COSTOS.get(nombre_clase, 0)
+            if self.fase == "defensor":
+                self.billetera_def.ganar(costo)
+            else:
+                self.billetera_atk.ganar(costo)
+            self._log(f"↩ {pieza.nombre} retirado — se devuelven ${costo}")
             self.mapa.dibujar()
             self._actualizar_barra()
 
@@ -2133,9 +2174,9 @@ class PantallaPartida:
         nombre = self.nombres.get(self.herramienta_actual, "Ninguna")
         self.barra_estado.config(
             text=(f"Torres: {torres}   Muros: {muros}   Unidades: {unidades}   |   "
-                  f"Selección: {nombre}   |   "
-                  f"Vida base: {self.mapa.base.vida_actual}/{self.mapa.base.vida_maxima}   |   "
-                  f"Zona defensa: verde   Zona ataque: gris")
+                f"Selección: {nombre}   |   "
+                f"Vida base: {self.mapa.base.vida_actual}/{self.mapa.base.vida_maxima}   |   "
+                f"💰 Def: ${self.billetera_def.saldo}   ⚔    Atk: ${self.billetera_atk.saldo}")
         )
 
     def _log(self, mensaje):
@@ -2155,7 +2196,7 @@ class PantallaResultadoRonda:
 
     RONDAS_PARA_GANAR = 2   # primer jugador en ganar 2 rondas gana la partida
 
-    def __init__(self, ventana, utils, jugadores, roles, ganador_num,score, ronda, ir_a_menu, siguiente_ronda_cb):
+    def __init__(self, ventana, utils, jugadores, roles, ganador_num,score, ronda, ir_a_menu, siguiente_ronda_cb,billetera_def=None, billetera_atk=None):
         self.ventana          = ventana
         self.utils            = utils
         self.jugadores        = jugadores
@@ -2165,6 +2206,8 @@ class PantallaResultadoRonda:
         self.ronda            = ronda
         self.ir_a_menu        = ir_a_menu
         self.siguiente_ronda  = siguiente_ronda_cb
+        self.billetera_def = billetera_def
+        self.billetera_atk = billetera_atk
 
     def mostrar(self):
         for widget in self.ventana.winfo_children():
@@ -2222,7 +2265,7 @@ class PantallaResultadoRonda:
 
             tk.Label(self.ventana,text=f"Ronda {self.ronda + 1}:  🛡 {n_def}  defiende  ·  {n_atk}  ataca ⚔",bg=COLOR_FONDO, fg=COLOR_TEXTO_TENUE, font=("Courier", 11)).place(relx=0.5, y=415, anchor="center")
 
-            self.utils.boton_medieval(self.ventana, f"⚔  JUGAR RONDA {self.ronda + 1}",lambda: self.siguiente_ronda(self.roles, self.score, self.ronda),COLOR_ORO).place(relx=0.5, y=470, anchor="center")
+            self.utils.boton_medieval(self.ventana, f"⚔  JUGAR RONDA {self.ronda + 1}",lambda: self.siguiente_ronda(self.roles, self.score, self.ronda, self.billetera_def, self.billetera_atk),COLOR_ORO).place(relx=0.5, y=470, anchor="center")
 
             self.utils.boton_medieval(self.ventana, "←  Abandonar partida", self.ir_a_menu, COLOR_TEXTO).place(relx=0.5, y=520, anchor="center")
 
@@ -2294,22 +2337,26 @@ def _jugador_sin_faccion():
             return numero
     return None
 
-def ir_a_partida(roles, score=None, ronda=1):
+def ir_a_partida(roles, score=None, ronda=1, billetera_def=None, billetera_atk=None):
     if score is None:
-        score = {1: 0, 2: 0}   # {num_jugador: rondas_ganadas}
-    pantalla = PantallaPartida(ventana, utils, jugadores, roles, estado_musica,ir_a_menu_actual, gestor,score=score, ronda=ronda,al_terminar_ronda=_al_terminar_ronda)
+        score = {1: 0, 2: 0}
+    pantalla = PantallaPartida(ventana, utils, jugadores, roles, estado_musica,ir_a_menu_actual, gestor, score=score, ronda=ronda,al_terminar_ronda=_al_terminar_ronda,billetera_def=billetera_def,billetera_atk=billetera_atk)
     pantalla.mostrar()
 
-def _al_terminar_ronda(roles, ganador_num, score, ronda):
-    """Se llama desde PantallaPartida cuando termina el combate."""
-    pantalla = PantallaResultadoRonda(ventana, utils, jugadores, roles, ganador_num,score, ronda,ir_a_menu_actual, _siguiente_ronda)
+def _al_terminar_ronda(roles, ganador_num, score, ronda, billetera_def, billetera_atk):
+    pantalla = PantallaResultadoRonda(
+        ventana, utils, jugadores, roles, ganador_num,
+        score, ronda, ir_a_menu_actual, _siguiente_ronda,
+        billetera_def=billetera_def,
+        billetera_atk=billetera_atk
+    )
     pantalla.mostrar()
 
-def _siguiente_ronda(roles_anteriores, score, ronda):
-    """Invierte los roles y lanza la siguiente ronda, o termina la partida."""
-    # Invertir roles
-    roles_nuevos = {"defensor": roles_anteriores["atacante"],"atacante": roles_anteriores["defensor"]}
-    ir_a_partida(roles_nuevos, score=score, ronda=ronda + 1)
+def _siguiente_ronda(roles_anteriores, score, ronda, billetera_def, billetera_atk):
+    roles_nuevos = {
+        "defensor": roles_anteriores["atacante"],
+        "atacante": roles_anteriores["defensor"]}
+    ir_a_partida(roles_nuevos, score=score, ronda=ronda + 1,billetera_def=billetera_atk, billetera_atk=billetera_def)
 
 def ir_a_top(): # Muestra la pantalla de ranking de jugadores según victorias
     pantalla = PantallaTop(ventana, utils, gestor, estado_musica, ir_a_menu_actual)
