@@ -1137,8 +1137,8 @@ class Torre(ABC):
     
 class TorreVigia(Torre):
     """Torre rápida: disparo doble cada 3 turnos."""
-    STATS = {"vida_maxima": 40, "daño": 12, "alcance": 2,
-             "costo": 0, "turnos_para_habilidad": 3}
+    STATS = {"vida_maxima": 40, "daño": 8, "alcance": 2,
+             "costo": 0, "turnos_para_habilidad": 5}
 
     def __init__(self):
         super().__init__(nombre="Torre Vigía", **self.STATS)
@@ -1154,8 +1154,8 @@ class TorreVigia(Torre):
                            f"{primer_golpe} + {segundo_golpe} de daño")
 class TorreCanon(Torre):
     """Torre pesada: disparo de área cada 4 turnos."""
-    STATS = {"vida_maxima": 85, "daño": 40, "alcance": 3,
-             "costo": 0, "turnos_para_habilidad": 4}
+    STATS = {"vida_maxima": 85, "daño": 25, "alcance": 3,
+             "costo": 0, "turnos_para_habilidad": 6}
 
     def __init__(self):
         super().__init__(nombre="Torre Cañón", **self.STATS)
@@ -1174,10 +1174,10 @@ class TorreCanon(Torre):
                            f"a {len(unidades)} unidad(es), total {total_infligido}")
 class TorreSanadora(Torre):
     """Torre de soporte: cura torres aliadas cada turno y pulso masivo cada 5."""
-    CURACION_POR_TURNO = 8
-    CURACION_HABILIDAD = 30
+    CURACION_POR_TURNO = 5
+    CURACION_HABILIDAD = 20
     STATS = {"vida_maxima": 35, "daño": 0, "alcance": 2,
-             "costo": 0, "turnos_para_habilidad": 5}
+             "costo": 0, "turnos_para_habilidad": 7}
 
     def __init__(self):
         super().__init__(nombre="Torre Sanadora", **self.STATS)
@@ -1337,8 +1337,8 @@ class Unidad(ABC):
 # Subclases concretas de Unidad
 class Soldado(Unidad):
     """Unidad básica equilibrada."""
-    STATS = {"vida_maxima": 30, "daño": 8, "velocidad": 1,
-             "alcance": 1, "costo": 0, "turnos_para_habilidad": 3}
+    STATS = {"vida_maxima": 55, "daño": 12, "velocidad": 1,
+             "alcance": 1, "costo": 0, "turnos_para_habilidad": 5}
 
     def __init__(self):
         super().__init__(nombre="Soldado", **self.STATS)
@@ -1350,8 +1350,8 @@ class Soldado(Unidad):
             contexto["log"] = f"{self.nombre} usa Ataque Doble"
 class Tanque(Unidad):
     """Alta vida, lento, activa escudo temporal cada 4 turnos."""
-    STATS = {"vida_maxima": 70, "daño": 10, "velocidad": 1,
-             "alcance": 1, "costo": 0, "turnos_para_habilidad": 4}
+    STATS = {"vida_maxima": 120, "daño": 18, "velocidad": 1,
+             "alcance": 1, "costo": 0, "turnos_para_habilidad": 6}
 
     def __init__(self):
         super().__init__(nombre="Tanque", **self.STATS)
@@ -1368,7 +1368,7 @@ class Tanque(Unidad):
         super().recibir_daño(cantidad)
 class UnidadRapida(Unidad):
     """Poco daño, se mueve más rápido y duplica velocidad con habilidad."""
-    STATS = {"vida_maxima": 18, "daño": 5, "velocidad": 2,
+    STATS = {"vida_maxima": 35, "daño": 8, "velocidad": 2,
              "alcance": 1, "costo": 0, "turnos_para_habilidad": 3}
 
     def __init__(self):
@@ -2018,6 +2018,9 @@ class PantallaPartida:
         self.barra_estado = tk.Label(self.ventana, text="", bg=COLOR_PIEDRA,fg=COLOR_TEXTO, font=("Courier", 9),anchor="w", justify="left")
         self.barra_estado.pack(fill="x", padx=10, pady=(0, 4))
 
+        self.barra_habilidades = tk.Label(self.ventana, text="", bg=COLOR_PIEDRA, fg=COLOR_ORO, font=("Courier", 8), anchor="w")
+        self.barra_habilidades.pack(fill="x", padx=10, pady=(0, 4))
+
         tk.Label(self.ventana, text="Registro:", bg=COLOR_FONDO,fg=COLOR_TEXTO_TENUE, font=("Courier", 8)).pack(anchor="w", padx=10)
 
         self.texto_log = tk.Text(self.ventana, height=6, bg=COLOR_PIEDRA,fg=COLOR_TEXTO, font=("Courier", 8),state="disabled")
@@ -2253,6 +2256,18 @@ class PantallaPartida:
                 f"Vida base: {self.mapa.base.vida_actual}/{self.mapa.base.vida_maxima}   |   "
                 f"💰 Def: ${self.billetera_def.saldo}   ⚔    Atk: ${self.billetera_atk.saldo}")
         )
+        # Muestra el contador de habilidad de cada torre y unidad activa
+        resumen_habilidades = []
+        for obj in self.mapa.ocupantes.values():
+            if obj is self.mapa.base:
+                continue
+            if hasattr(obj, "_turno_actual") and hasattr(obj, "turnos_para_habilidad"):
+                resumen_habilidades.append(
+                    f"{obj.nombre}: {obj._turno_actual}/{obj.turnos_para_habilidad}")
+        if resumen_habilidades:
+            self.barra_habilidades.config(text="✦ Habilidades: " + "   ".join(resumen_habilidades))
+        else:
+            self.barra_habilidades.config(text="")
 
     def _log(self, mensaje):
         self.texto_log.config(state="normal")
@@ -2269,7 +2284,7 @@ class PantallaPartida:
 class PantallaResultadoRonda:
     """Pantalla intermedia entre rondas: muestra quién ganó y el marcador."""
 
-    RONDAS_PARA_GANAR = 2   # primer jugador en ganar 2 rondas gana la partida
+    RONDAS_PARA_GANAR = 3   # primer jugador en ganar 3 rondas gana la partida
 
     def __init__(self, ventana, utils, jugadores, roles, ganador_num,score, ronda, ir_a_menu, siguiente_ronda_cb,billetera_def=None, billetera_atk=None):
         self.ventana          = ventana
@@ -2431,6 +2446,8 @@ def _siguiente_ronda(roles_anteriores, score, ronda, billetera_def, billetera_at
     roles_nuevos = {
         "defensor": roles_anteriores["atacante"],
         "atacante": roles_anteriores["defensor"]}
+    billetera_def.ganar(500)
+    billetera_atk.ganar(500)
     ir_a_partida(roles_nuevos, score=score, ronda=ronda + 1,billetera_def=billetera_atk, billetera_atk=billetera_def)
 
 def ir_a_top(): # Muestra la pantalla de ranking de jugadores según victorias
