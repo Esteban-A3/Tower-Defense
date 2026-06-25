@@ -2128,7 +2128,7 @@ class PantallaPartida:
             self._mostrar_boton_fin()
             return
         # Turno siguiente automático en 800 ms
-        self.ventana.after(800, self._siguiente_turno)
+        self.ventana.after(1500, self._siguiente_turno)
 
     def _actualizar_panel_por_fase(self):
         for item, valor in self.items:
