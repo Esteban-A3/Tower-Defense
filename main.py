@@ -1412,13 +1412,16 @@ class MapaJuego:
         UnidadRapida: "R",
     }
 
-    def __init__(self, canvas):
+    def __init__(self, canvas,faccion_defensor="Medieval"):
         self.canvas   = canvas
         self.base     = BaseCentral()
         self.ocupantes = {}
         self.unidades  = []
         self._zona_defensa = set()   # se calcula al colocar la base
         self.base_colocada = False
+        self.faccion_defensor = faccion_defensor.lower()  # "medieval", "futurista" o "naturaleza"
+        self._imagenes = {}  # cache para que las imágenes no sean destruidas por el garbage collector
+
 
     def es_zona_defensa(self, fila, columna):
         return (fila, columna) in self._zona_defensa
@@ -1559,23 +1562,59 @@ class MapaJuego:
                 objeto = self.ocupantes.get((fila, col))
 
                 if objeto is self.base:
-                    color, etiqueta = self.COLOR_BASE, "B"
+                    color, etiqueta, imagen = self.COLOR_BASE, "B", None
                 elif objeto is not None:
                     color    = self.COLORES.get(type(objeto), "#888888")
                     etiqueta = self.ETIQUETAS.get(type(objeto), "?")
+                    imagen   = self._cargar_imagen(type(objeto))  # None si no hay skin
                 else:
-                    color, etiqueta = fondo, ""
+                    color, etiqueta, imagen = fondo, "", None
 
-                self.canvas.create_rectangle(x0, y0, x1, y1,
-                                              fill=color, outline=self.COLOR_LINEA)
-                if etiqueta:
-                    self.canvas.create_text(x0 + t / 2, y0 + t / 2 - 5,
-                                             text=etiqueta, fill="white",
-                                             font=("Courier", 8, "bold"))
+                self.canvas.create_rectangle(x0, y0, x1, y1, fill=color, outline=self.COLOR_LINEA)
+
+                if imagen:
+                    # Dibuja la skin encima del rectángulo de color
+                    self.canvas.create_image(x0 + t // 2, y0 + t // 2, image=imagen)
+                elif etiqueta:
+                    # Sin skin: muestra la etiqueta de texto como antes
+                    self.canvas.create_text(x0 + t / 2, y0 + t / 2 - 5,text=etiqueta, fill="white",font=("Courier", 8, "bold"))
+
+                # Vida debajo, solo para torres y unidades (no base, no celdas vacías)
                 if objeto is not None and objeto is not self.base:
-                    self.canvas.create_text(x0 + t / 2, y0 + t / 2 + 9,
-                                             text=str(objeto.vida_actual),
-                                             fill="white", font=("Courier", 7))
+                    self.canvas.create_text(x0 + t / 2, y0 + t / 2 + 9,text=str(objeto.vida_actual),fill="white", font=("Courier", 7))
+                    
+    def _cargar_imagen(self, clase):
+    # Retorna la imagen de la facción para la clase dada, o None si no existe
+        nombres = {
+        TorreVigia:    "torre_vigia",
+        TorreCanon:    "torre_canon",
+        TorreSanadora: "torre_sanadora",
+        Muro:          "muro",
+        }
+        base_nombre = nombres.get(clase)
+        if not base_nombre:
+            return None
+        # Si ya está cacheada la retorna directo
+        clave = f"{base_nombre}_{self.faccion_defensor}"
+        if clave in self._imagenes:
+            return self._imagenes[clave]
+        # Construye la ruta según la estructura de assets que tenés
+        carpeta = {
+        "torre_vigia":    "Torre Vigia",
+        "torre_canon":    "Torre Canon",
+        "torre_sanadora": "Torre Sanadora",
+        "muro":           "Muros",
+        }[base_nombre]
+        ruta = os.path.join("assets", carpeta, f"{base_nombre}_{self.faccion_defensor}.png")
+        if not os.path.exists(ruta):
+            return None
+        img = tk.PhotoImage(file=ruta)
+        # Escala la imagen al tamaño de la celda (TAM_CELDA px)
+        factor = max(1, img.width() // self.TAM_CELDA)
+        if factor > 1:
+            img = img.subsample(factor, factor)
+        self._imagenes[clave] = img  # guarda en cache para evitar garbage collection
+        return img
 
 # -----------------------------------------------------------
 # MOTOR DE COMBATE
@@ -2048,7 +2087,8 @@ class PantallaPartida:
 
     def _nueva_partida(self):
         self.fase = "defensor"
-        self.mapa  = MapaJuego(self.canvas)
+        faccion_def = gestor.obtener_faccion(jugadores[self.roles["defensor"]]["nombre"]) or "Medieval"
+        self.mapa = MapaJuego(self.canvas, faccion_defensor=faccion_def)
         self.motor = MotorCombate(self.mapa, self._log)
         self._limpiar_log()
         num_def = self.roles["defensor"]
