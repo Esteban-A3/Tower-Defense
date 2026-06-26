@@ -2044,6 +2044,9 @@ class PantallaPartida:
         self.btn_limpiar = tk.Button(panel, text="🗑  Limpiar mapa", command=self._limpiar, bg=COLOR_PIEDRA, fg=COLOR_TEXTO, relief=tk.FLAT, font=("Courier", 9))
         self.btn_limpiar.pack(fill="x", padx=10, pady=(10, 4))
 
+        self.btn_accion = tk.Button(panel, text="✔  Defensor listo", command=self._accion_fase,bg=COLOR_PIEDRA, fg=COLOR_ORO, relief=tk.FLAT, font=("Courier", 9))
+        self.btn_accion.pack(fill="x", padx=10, pady=4)
+
         self.btn_musica_juego = tk.Button(panel, text="🔇  Silenciar música",command=self._alternar_musica_juego, bg=COLOR_PIEDRA, fg=COLOR_TEXTO_TENUE,relief=tk.FLAT, font=("Courier", 9))
         self.btn_musica_juego.pack(fill="x", padx=10, pady=(4, 12))
 
