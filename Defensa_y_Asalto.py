@@ -1069,18 +1069,14 @@ class PantallaRoles: # Pantalla de sorteo de roles para la Ronda 1
         roles = {"defensor": self.numero_defensor, "atacante": self.numero_atacante}
         self.ir_continuar(roles)
 
-# ===========================================================
-#Arreglar comentarios desde aqui
 # CLASES DE JUEGO — ESTRUCTURAS, TROPAS, BASE Y MAPA
-# ===========================================================
 
-# -----------------------------------------------------------
 # ESTRUCTURAS
-# -----------------------------------------------------------
+
 class Torre(ABC):
     """Clase abstracta base para todas las torres defensoras."""
 
-    def __init__(self, nombre, vida_maxima, daño, alcance,
+    def __init__(self, nombre, vida_maxima, daño, alcance, 
                  costo, turnos_para_habilidad):
         self.nombre               = nombre
         self.vida_maxima          = vida_maxima
@@ -1093,45 +1089,50 @@ class Torre(ABC):
         self.fila                 = None
         self.columna              = None
 
-    def atacar(self, objetivo):
+    def atacar(self, objetivo): # Inflige daño a un objetivo si está vivo y devuelve la cantidad de daño infligido
         if not self.esta_viva():
             return 0
         daño_infligido = min(self.daño, objetivo.vida_actual)
         objetivo.vida_actual -= daño_infligido
-        return daño_infligido
+        return daño_infligido 
 
-    def puede_atacar_a(self, fila_objetivo, columna_objetivo):
+    def puede_atacar_a(self, fila_objetivo, columna_objetivo): 
+        # Verifica si un objetivo está dentro del alcance de la torre
         if self.fila is None or self.columna is None:
             return False
         distancia = max(abs(self.fila - fila_objetivo),
                         abs(self.columna - columna_objetivo))
         return distancia <= self.alcance
 
-    def avanzar_turno(self, contexto):
+    def avanzar_turno(self, contexto): # Avanza el turno de la torre y activa su habilidad si corresponde
         self._turno_actual += 1
         if self._turno_actual >= self.turnos_para_habilidad:
             self.activar_habilidad(contexto)
             self._turno_actual = 0
 
     @abstractmethod
-    def activar_habilidad(self, contexto):
+    def activar_habilidad(self, contexto): 
+        # Método abstracto que debe ser implementado por cada tipo de torre para definir su habilidad especial
         pass
 
-    def esta_viva(self):
+    def esta_viva(self): # Verifica si la torre aún tiene vida y puede seguir funcionando
         return self.vida_actual > 0
 
-    def recibir_daño(self, cantidad):
+    def recibir_daño(self, cantidad): 
+        # Reduce la vida actual de la torre al recibir daño, asegurando que no sea menor a cero
         self.vida_actual = max(0, self.vida_actual - cantidad)
 
-    def curar(self, cantidad):
+    def curar(self, cantidad): 
+        # Aumenta la vida actual de la torre al recibir curación, asegurando que no supere la vida máxima
         self.vida_actual = min(self.vida_maxima, self.vida_actual + cantidad)
 
     def resumen(self):
+        # Devuelve un resumen de la torre con su nombre, vida actual y máxima, daño, alcance y estado de la habilidad
         return (f"[{self.nombre}] Vida: {self.vida_actual}/{self.vida_maxima} | "
                 f"Daño: {self.daño} | Alcance: {self.alcance} | "
                 f"Turno habilidad: {self._turno_actual}/{self.turnos_para_habilidad}")
 
-    def __repr__(self):
+    def __repr__(self): # Devuelve una representación de la torre con su nombre, estado (viva o destruida) y vida actual 
         estado = "viva" if self.esta_viva() else "destruida"
         return f"{self.nombre}({estado}, {self.vida_actual}hp)"
     
@@ -1140,10 +1141,10 @@ class TorreVigia(Torre):
     STATS = {"vida_maxima": 40, "daño": 8, "alcance": 2,
              "costo": 0, "turnos_para_habilidad": 5}
 
-    def __init__(self):
+    def __init__(self): # Inicializa la torre vigía con sus estadísticas específicas
         super().__init__(nombre="Torre Vigía", **self.STATS)
 
-    def activar_habilidad(self, contexto):
+    def activar_habilidad(self, contexto): 
         unidades = contexto.get("unidades_en_rango", [])
         if not unidades:
             return
@@ -1152,15 +1153,16 @@ class TorreVigia(Torre):
         segundo_golpe = self.atacar(objetivo)
         contexto["log"] = (f"{self.nombre} dispara doble sobre {objetivo.nombre}: "
                            f"{primer_golpe} + {segundo_golpe} de daño")
+
 class TorreCanon(Torre):
     """Torre pesada: disparo de área cada 4 turnos."""
     STATS = {"vida_maxima": 85, "daño": 25, "alcance": 3,
              "costo": 0, "turnos_para_habilidad": 6}
 
-    def __init__(self):
+    def __init__(self): # Inicializa la torre cañón con sus estadísticas específicas
         super().__init__(nombre="Torre Cañón", **self.STATS)
 
-    def activar_habilidad(self, contexto):
+    def activar_habilidad(self, contexto): # Inflige daño de área a todas las unidades enemigas en rango, reduciendo su vida actual y registrando el total de daño infligido
         unidades = contexto.get("unidades_en_rango", [])
         if not unidades:
             return
@@ -1172,6 +1174,8 @@ class TorreCanon(Torre):
             total_infligido    += daño_real
         contexto["log"] = (f"{self.nombre} dispara explosión: {daño_area} dmg "
                            f"a {len(unidades)} unidad(es), total {total_infligido}")
+
+        
 class TorreSanadora(Torre):
     """Torre de soporte: cura torres aliadas cada turno y pulso masivo cada 5."""
     CURACION_POR_TURNO = 5
@@ -1179,13 +1183,14 @@ class TorreSanadora(Torre):
     STATS = {"vida_maxima": 35, "daño": 0, "alcance": 2,
              "costo": 0, "turnos_para_habilidad": 7}
 
-    def __init__(self):
+    def __init__(self): # Inicializa la torre sanadora con sus estadísticas específicas
         super().__init__(nombre="Torre Sanadora", **self.STATS)
 
-    def atacar(self, objetivo):
+    def atacar(self, objetivo): # La torre sanadora no inflige daño, por lo que este método siempre devuelve 0
         return 0
 
     def avanzar_turno(self, contexto):
+        # Cada turno, la torre sanadora cura a la torre aliada más dañada dentro de su alcance, si es que hay alguna. Luego, llama al método avanzar_turno de la clase base para manejar la habilidad especial.
         torres_cercanas = contexto.get("torres_cercanas", [])
         if torres_cercanas:
             torre_dañada = min(torres_cercanas, key=lambda t: t.vida_actual)
@@ -1193,7 +1198,8 @@ class TorreSanadora(Torre):
                 torre_dañada.curar(self.CURACION_POR_TURNO)
         super().avanzar_turno(contexto)
 
-    def activar_habilidad(self, contexto):
+    def activar_habilidad(self, contexto): 
+        # La habilidad especial de la torre sanadora cura a todas las torres aliadas cercanas que estén dañadas. Si no hay torres dañadas, se registra un mensaje en el contexto.
         torres_cercanas = contexto.get("torres_cercanas", [])
         torres_curadas  = [t for t in torres_cercanas
                            if t.vida_actual < t.vida_maxima]
@@ -1204,7 +1210,9 @@ class TorreSanadora(Torre):
             torre.curar(self.CURACION_HABILIDAD)
         contexto["log"] = (f"{self.nombre} lanza pulso de curación: "
                            f"+{self.CURACION_HABILIDAD} vida a {len(torres_curadas)} torre(s)")
-class Muro:
+
+        
+class Muro: 
     """Obstáculo físico sin capacidad de ataque."""
     VIDA_MAXIMA = 60
     COSTO       = 0
@@ -1217,7 +1225,7 @@ class Muro:
         self.fila        = None
         self.columna     = None
 
-    def recibir_daño(self, cantidad):
+    def recibir_daño(self, cantidad): # Reduce la vida actual del muro al recibir daño, asegurando que no sea menor a cero
         self.vida_actual = max(0, self.vida_actual - cantidad)
 
     def esta_vivo(self):
@@ -1227,58 +1235,62 @@ class Muro:
     def esta_viva(self):
         return self.esta_vivo()
 
-    def resumen(self):
+    def resumen(self): # Estado del muro
         return f"[Muro] Vida: {self.vida_actual}/{self.vida_maxima}"
 
-    def __repr__(self):
+    def __repr__(self): # Devuelve una representación del muro con su estado (en pie o destruido) y vida actual
         estado = "en pie" if self.esta_vivo() else "destruido"
         return f"Muro({estado}, {self.vida_actual}hp)"
 
-# -----------------------------------------------------------
-# BASE CENTRAL
-# -----------------------------------------------------------
+
+# Base Central
+
 class BaseCentral:
     """Estructura central del defensor. Su destrucción = victoria del atacante."""
     VIDA_MAXIMA = 200
 
-    def __init__(self):
+    def __init__(self): # Inicializa la base central con su nombre, vida máxima y actual, y una lista vacía de celdas que la rodean
         self.nombre      = "Base Central"
         self.vida_maxima = self.VIDA_MAXIMA
         self.vida_actual = self.VIDA_MAXIMA
         self.celdas      = []
 
-    def recibir_daño(self, cantidad):
+    def recibir_daño(self, cantidad): 
+        # Reduce la vida actual de la base central al recibir daño, asegurando que no sea menor a cero y devolviendo el daño real recibido
         daño_real        = min(cantidad, self.vida_actual)
         self.vida_actual -= daño_real
         return daño_real
 
-    def esta_destruida(self):
+    def esta_destruida(self): # Verifica si la base central ha sido destruida (vida actual <= 0)
         return self.vida_actual <= 0
 
-    def esta_viva(self):
+    def esta_viva(self): # Verifica si la base central aún tiene vida (vida actual > 0)
         return self.vida_actual > 0
 
-    def porcentaje_vida(self):
+    def porcentaje_vida(self): 
+        # Devuelve el porcentaje de vida actual de la base central en relación a su vida máxima, como un valor entre 0 y 1
         return self.vida_actual / self.vida_maxima
 
     def reiniciar(self):
+         # Restablece la vida actual de la base central a su vida máxima, útil para reiniciar la partida o una nueva ronda
         self.vida_actual = self.vida_maxima
 
-    def resumen(self):
+    def resumen(self): 
+        # Devuelve un resumen de la base central con su nombre, vida actual y máxima, y el porcentaje de vida restante
         porcentaje = int(self.porcentaje_vida() * 100)
         return f"[{self.nombre}] Vida: {self.vida_actual}/{self.vida_maxima} ({porcentaje}%)"
 
-    def __repr__(self):
+    def __repr__(self): 
+        # Devuelve una representación de la base central con su estado (en pie o destruida) y vida actual
         estado = "en pie" if self.esta_viva() else "DESTRUIDA"
         return f"BaseCentral({estado}, {self.vida_actual}hp)"
 
-# -----------------------------------------------------------
-# TROPAS — clase base abstracta
-# -----------------------------------------------------------
+# Tropas 
+
 class Unidad(ABC):
     """Clase base abstracta para todas las unidades atacantes."""
 
-    def __init__(self, nombre, vida_maxima, daño, velocidad,
+    def __init__(self, nombre, vida_maxima, daño, velocidad, # Inicializa una unidad con sus atributos básicos
                  alcance, costo, turnos_para_habilidad):
         self.nombre                = nombre
         self.vida_maxima           = vida_maxima
@@ -1293,61 +1305,67 @@ class Unidad(ABC):
         self.columna               = None
         self.en_recuperacion       = False
 
-    def atacar(self, objetivo):
+    def atacar(self, objetivo): 
+        # Inflige daño a un objetivo si la unidad está viva y devuelve la cantidad de daño infligido
         if not self.esta_viva():
             return 0
         daño_infligido = min(self.daño, objetivo.vida_actual)
         objetivo.recibir_daño(daño_infligido)
         return daño_infligido
 
-    def puede_atacar_a(self, fila_objetivo, columna_objetivo):
+    def puede_atacar_a(self, fila_objetivo, columna_objetivo): 
+        # Verifica si un objetivo está dentro del alcance de la unidad
         if self.fila is None or self.columna is None:
             return False
         distancia = max(abs(self.fila - fila_objetivo),
                         abs(self.columna - columna_objetivo))
         return distancia <= self.alcance
 
-    def esta_viva(self):
+    def esta_viva(self): # Verifica si la unidad aún tiene vida y puede seguir funcionando
         return self.vida_actual > 0
 
-    def recibir_daño(self, cantidad):
+    def recibir_daño(self, cantidad): # Reduce la vida actual de la unidad al recibir daño, asegurando que no sea menor a cero
         self.vida_actual = max(0, self.vida_actual - cantidad)
 
-    def curar(self, cantidad):
+    def curar(self, cantidad): # Aumenta la vida actual de la unidad al recibir curación, asegurando que no supere la vida máxima
         self.vida_actual = min(self.vida_maxima, self.vida_actual + cantidad)
 
-    def avanzar_turno(self, contexto):
+    def avanzar_turno(self, contexto):# Avanza el turno de la unidad y activa su habilidad si corresponde
         self._turno_actual += 1
         if self._turno_actual >= self.turnos_para_habilidad:
             self.activar_habilidad(contexto)
             self._turno_actual = 0
 
-    @abstractmethod
-    def activar_habilidad(self, contexto):
+    @abstractmethod # Método abstracto que debe ser implementado por cada tipo de unidad para definir su habilidad especial
+    def activar_habilidad(self, contexto): 
         pass
 
-    def resumen(self):
+    def resumen(self): # Devuelve un resumen de la unidad con su nombre, vida actual y máxima, daño y velocidad
         return (f"[{self.nombre}] Vida: {self.vida_actual}/{self.vida_maxima} | "
                 f"Daño: {self.daño} | Vel: {self.velocidad}")
 
-    def __repr__(self):
+    def __repr__(self): 
+        # Devuelve una representación de la unidad con su nombre, estado (viva o muerta) y vida actual
         estado = "vivo" if self.esta_viva() else "muerto"
         return f"{self.nombre}({estado}, {self.vida_actual}hp)"
 
 # Subclases concretas de Unidad
+
 class Soldado(Unidad):
     """Unidad básica equilibrada."""
     STATS = {"vida_maxima": 55, "daño": 12, "velocidad": 1,
              "alcance": 1, "costo": 0, "turnos_para_habilidad": 5}
 
-    def __init__(self):
+    def __init__(self): # Inicializa el soldado con sus estadísticas específicas
         super().__init__(nombre="Soldado", **self.STATS)
 
     def activar_habilidad(self, contexto):
+    # La habilidad del soldado es un ataque doble al objetivo más cercano si está vivo. Se registra un mensaje en el contexto indicando que la habilidad fue usada.
         objetivo = contexto.get("objetivo")
         if objetivo and getattr(objetivo, "vida_actual", 0) > 0:
             self.atacar(objetivo)
             contexto["log"] = f"{self.nombre} usa Ataque Doble"
+
 class Tanque(Unidad):
     """Alta vida, lento, activa escudo temporal cada 4 turnos."""
     STATS = {"vida_maxima": 120, "daño": 18, "velocidad": 1,
@@ -1361,11 +1379,12 @@ class Tanque(Unidad):
         self.escudo_activo = True
         contexto["log"] = f"{self.nombre} activa Escudo Temporal"
 
-    def recibir_daño(self, cantidad):
+    def recibir_daño(self, cantidad): # Si el escudo está activo, la unidad no recibe daño y el escudo se desactiva. De lo contrario, se llama al método recibir_daño de la clase base para reducir la vida actual.
         if self.escudo_activo:
             self.escudo_activo = False
             return
         super().recibir_daño(cantidad)
+        
 class UnidadRapida(Unidad):
     """Poco daño, se mueve más rápido y duplica velocidad con habilidad."""
     STATS = {"vida_maxima": 35, "daño": 8, "velocidad": 2,
@@ -1378,10 +1397,12 @@ class UnidadRapida(Unidad):
         self.velocidad *= 2
         contexto["log"] = f"{self.nombre} usa Aumento de Velocidad"
 
-# -----------------------------------------------------------
 # MAPA
-# -----------------------------------------------------------
-class MapaJuego:
+
+class MapaJuego: 
+    """  Representa el mapa de juego con celdas, estructuras y unidades,
+      y gestiona la colocación y el combate.
+    """
     FILAS, COLUMNAS = 15, 15
     TAM_CELDA       = 45
     MARGEN          = 36
@@ -1393,7 +1414,7 @@ class MapaJuego:
     COLOR_LINEA        = "#3a2e1e"
     COLOR_BASE         = "#f0c060"
 
-    COLORES = {
+    COLORES = { # Colores para cada tipo de estructura y unidad
         Muro:         "#5a4a35",
         TorreVigia:   "#4a8cc9",
         TorreCanon:   "#c9794a",
@@ -1402,7 +1423,7 @@ class MapaJuego:
         Tanque:       "#8a3a3a",
         UnidadRapida: "#4ac9c0",
     }
-    ETIQUETAS = {
+    ETIQUETAS = { # Etiquetas para cada tipo de estructura y unidad
         Muro:         "M",
         TorreVigia:   "TV",
         TorreCanon:   "TC",
@@ -1412,7 +1433,9 @@ class MapaJuego:
         UnidadRapida: "R",
     }
 
-    def __init__(self, canvas,faccion_defensor="Medieval"):
+    def __init__(self, canvas,faccion_defensor="Medieval"): 
+        # Inicializa el mapa de juego con un canvas para dibujar, una base central, diccionarios
+        #  para ocupantes y unidades, y establece la facción del defensor y del atacante.
         self.canvas   = canvas
         self.base     = BaseCentral()
         self.ocupantes = {}
@@ -1424,7 +1447,8 @@ class MapaJuego:
         self._imagenes = {}  # cache para que las imágenes no sean destruidas por el garbage collector
 
 
-    def es_zona_defensa(self, fila, columna):
+    def es_zona_defensa(self, fila, columna): 
+        # Verifica si una celda está dentro de la zona de defensa (verde) alrededor de la base central
         return (fila, columna) in self._zona_defensa
     
     def colocar_base(self, fila_centro, col_centro):
@@ -1462,10 +1486,12 @@ class MapaJuego:
         self.base_colocada = True
         return True, ""
 
-    def esta_libre(self, fila, columna):
+    def esta_libre(self, fila, columna): # Verifica si una celda está libre (no ocupada por ninguna estructura o unidad)
         return (fila, columna) not in self.ocupantes
 
-    def puede_colocar(self, fila, columna, clase):
+    def puede_colocar(self, fila, columna, clase): 
+        # Verifica si se puede colocar un objeto de la clase dada en la celda especificada,
+        # considerando las reglas del juego
         if not self.esta_libre(fila, columna):
             return False, "Esa celda ya está ocupada."
 
@@ -1482,18 +1508,20 @@ class MapaJuego:
             return False, "Las unidades atacantes no pueden entrar a la zona de defensa."
         return True, ""
 
-    def estructuras(self):
+    def estructuras(self): # Devuelve una lista de todas las estructuras (torres y muros) actualmente en el mapa
         return [o for o in self.ocupantes.values() if isinstance(o, (Torre, Muro))]
 
-    def torres(self):
+    def torres(self): # Devuelve una lista de todas las torres actualmente en el mapa
         return [o for o in self.ocupantes.values() if isinstance(o, Torre)]
 
-    def contar(self):
+    def contar(self): # Devuelve el conteo de torres, muros y unidades actualmente en el mapa
         torres  = sum(1 for o in self.ocupantes.values() if isinstance(o, Torre))
         muros   = sum(1 for o in self.ocupantes.values() if isinstance(o, Muro))
         return torres, muros, len(self.unidades)
 
-    def celda_desde_click(self, x, y):
+    def celda_desde_click(self, x, y): 
+        # Convierte las coordenadas de un click en el canvas a la fila y columna correspondiente del mapa,
+        #  considerando el margen y tamaño de celda. Retorna None si el click está fuera del área del mapa.
         col  = int((x - self.MARGEN) // self.TAM_CELDA)
         fila = int((y - self.MARGEN) // self.TAM_CELDA)
         if 0 <= fila < self.FILAS and 0 <= col < self.COLUMNAS:
@@ -1501,6 +1529,7 @@ class MapaJuego:
         return None
 
     def colocar(self, fila, columna, objeto):
+         # Intenta colocar un objeto (estructura o unidad) en la celda especificada.
         puede, _ = self.puede_colocar(fila, columna, type(objeto))
         if not puede:
             return False
@@ -1510,7 +1539,9 @@ class MapaJuego:
             self.unidades.append(objeto)
         return True
 
-    def quitar(self, fila, columna):
+    def quitar(self, fila, columna): 
+        # Quita el objeto (estructura o unidad) de la celda especificada y lo devuelve. Si la celda está vacía,
+        #  devuelve None.
         objeto = self.ocupantes.get((fila, columna))
         if objeto is None:
             return None
@@ -1527,14 +1558,17 @@ class MapaJuego:
             self.unidades.remove(objeto)
         return objeto
 
-    def limpiar(self):
+    def limpiar(self): 
+         # Limpia todo el mapa, eliminando todas las estructuras y unidades,
+         #  y reseteando la base y la zona de defensa
         self.ocupantes     = {}
         self.unidades      = []
         self._zona_defensa = set()
         self.base.celdas   = []
         self.base_colocada = False
 
-    def limpiar_muertos(self):
+    def limpiar_muertos(self): 
+        # Elimina del mapa todas las unidades y estructuras que hayan sido destruidas (vida actual <= 0).
         for pos, objeto in list(self.ocupantes.items()):
             if objeto is self.base:
                 continue
@@ -1543,11 +1577,13 @@ class MapaJuego:
                 if objeto in self.unidades:
                     self.unidades.remove(objeto)
 
-    def dibujar(self):
+    def dibujar(self): 
+        # Dibuja el mapa en el canvas, mostrando las celdas, estructuras,
+        #  unidades y la base central con sus colores, etiquetas o imágenes correspondientes.
         self.canvas.delete("all")
         m, t = self.MARGEN, self.TAM_CELDA
 
-        for i in range(self.FILAS):
+        for i in range(self.FILAS): # Dibuja las líneas de la cuadrícula y los números de fila y columna
             self.canvas.create_text(m / 2, m + i * t + t / 2, text=str(i),
                                      fill="#6b5e4a", font=("Courier", 8))
             self.canvas.create_text(m + i * t + t / 2, m / 2, text=str(i),
@@ -1628,28 +1664,34 @@ class MapaJuego:
         self._imagenes[clave] = img  # guarda en cache para evitar garbage collection
         return img
 
-# -----------------------------------------------------------
-# MOTOR DE COMBATE
-# -----------------------------------------------------------
+# Motor de Combate
+
 class MotorCombate:
 
     def __init__(self, mapa, log_callback):
         self.mapa = mapa
         self.log  = log_callback
 
-    def jugar_turno(self):
+    def jugar_turno(self): 
+        """ Ejecuta un turno completo de combate: primero las unidades atacantes se mueven o atacan,
+        luego las torres defensoras atacan, y finalmente se limpian los muertos del mapa.
+        Devuelve el resultado de la victoria (si hay) y una lista de eventos ocurridos durante el turno. 
+        """
         self._eventos = []
         self._turno_unidades()
         self._turno_torres()
         self.mapa.limpiar_muertos()
         return self._revisar_victoria(), self._eventos
 
-    def _turno_unidades(self):
+    def _turno_unidades(self): 
+        # Ejecuta el turno de las unidades atacantes: cada unidad viva se mueve o ataca según su posición y alcance.
         for unidad in list(self.mapa.unidades):
             if unidad.esta_viva():
                 self._mover_o_atacar(unidad)
 
-    def _mover_o_atacar(self, unidad):
+    def _mover_o_atacar(self, unidad): 
+        # Determina si la unidad puede atacar la base o alguna estructura enemiga,
+        #  y realiza la acción correspondiente. Si no puede atacar, avanza hacia la base.
         celda_base = min(self.mapa.base.celdas,key=lambda c: max(abs(c[0] - unidad.fila),abs(c[1] - unidad.columna)))
 
         if unidad.puede_atacar_a(*celda_base):
@@ -1671,13 +1713,18 @@ class MotorCombate:
 
         self._avanzar(unidad, celda_base)
 
-    def _estructura_en_alcance(self, unidad):
+    def _estructura_en_alcance(self, unidad): 
+        # Devuelve la primera estructura enemiga que esté dentro del alcance de la unidad, o None si no hay ninguna.
         for estructura in self.mapa.estructuras():
             if unidad.puede_atacar_a(estructura.fila, estructura.columna):
                 return estructura
         return None
 
-    def _avanzar(self, unidad, celda_base):
+    def _avanzar(self, unidad, celda_base): 
+        """ Avanza la unidad hacia la celda de la base central,
+        moviéndose hasta su velocidad máxima o hasta que encuentre un obstáculo.
+        Actualiza la posición de la unidad en el mapa y registra el movimiento en el log.
+        """
         fila_obj, col_obj = celda_base
         for _ in range(unidad.velocidad):
             df = (fila_obj > unidad.fila) - (fila_obj < unidad.fila)
@@ -1696,13 +1743,20 @@ class MotorCombate:
 
         self.log(f"➤ {unidad.nombre} avanza a ({unidad.fila}, {unidad.columna})")
 
-    def _intentar_habilidad(self, unidad, objetivo):
+    def _intentar_habilidad(self, unidad, objetivo): 
+        """ Si la unidad ha alcanzado el número de turnos necesarios para activar su habilidad,
+        se llama a su método activar_habilidad con un contexto que incluye el objetivo actual.
+        Si la habilidad genera un mensaje de log, se registra.
+        """
         contexto = {"objetivo": objetivo, "log": None}
         unidad.avanzar_turno(contexto)
         if contexto.get("log"):
             self.log("✦ " + contexto["log"])
 
     def _turno_torres(self):
+        """ Ejecuta el turno de las torres defensoras:
+        cada torre viva busca unidades enemigas en su alcance y ataca a la que tenga menos vida.
+        Luego, llama al método avanzar_turno de la torre para manejar su habilidad special. """
         for torre in self.mapa.torres():
             if not torre.esta_viva():
                 continue
@@ -1729,7 +1783,9 @@ class MotorCombate:
             if contexto.get("log"):
                 self.log("✦ " + contexto["log"])
 
-    def _revisar_victoria(self):
+    def _revisar_victoria(self): 
+        # Revisa si la base central ha sido destruida o si no quedan unidades enemigas,
+        #  y devuelve el resultado de la victoria.
         if not self.mapa.base.esta_viva():
             return "atacante"
         if not self.mapa.unidades:
@@ -1760,9 +1816,7 @@ class ItemHerramienta(tk.Frame):
         self.config(highlightbackground=COLOR_ORO_BRILLANTE if activo else COLOR_SEPARADOR,
                     highlightthickness=3 if activo else 2)
 
-# -----------------------------------------------------------
-# Economia del juego
-# -----------------------------------------------------------
+# ECONOMÍA Y RECOMPENSAS
 
 #  CONSTANTES — editar aquí para rebalancear el juego
 #Flujo económico por ronda
@@ -1894,7 +1948,9 @@ class Billetera:
 
     def __repr__(self):
         return f"Billetera(${self.saldo})"
+    
 # Controlador económico 
+
 class EconomiaController:
     """
     Aplica las recompensas económicas durante el combate.
@@ -1964,9 +2020,8 @@ class EconomiaController:
             "atacante": {"bono_ronda": bono_atk, "bono_daño": bono_atk_daño},
         }
 
-# -----------------------------------------------------------
-# PANTALLA DE PARTIDA
-# -----------------------------------------------------------
+# Pantalla de partida
+
 class PantallaPartida:
     """Pantalla principal de juego: mapa + panel + motor de combate."""
 
@@ -1982,7 +2037,9 @@ class PantallaPartida:
         ("Unidad Rápida", UnidadRapida,  "#4ac9c0"),
     ]
 
-    def __init__(self, ventana, utils, jugadores, roles, estado_musica,ir_a_menu, gestor, score=None, ronda=1,al_terminar_ronda=None,billetera_def=None, billetera_atk=None):
+    def __init__(self, ventana, utils, jugadores, roles, estado_musica,ir_a_menu, gestor, score=None,
+                  ronda=1,al_terminar_ronda=None,billetera_def=None, billetera_atk=None): 
+        # Inicializa la pantalla de partida con los parámetros necesarios para el juego.
         self.ventana       = ventana
         self.utils         = utils
         self.jugadores     = jugadores
@@ -2005,7 +2062,7 @@ class PantallaPartida:
         self.economia = EconomiaController(self.billetera_def, self.billetera_atk)
         self.nombres[BaseCentral] = "Base Central"
 
-    def mostrar(self):
+    def mostrar(self): # Muestra la pantalla de partida, construyendo el layout y preparando la partida.
         for widget in self.ventana.winfo_children():
             widget.destroy()
 
@@ -2022,7 +2079,8 @@ class PantallaPartida:
         self._construir_layout(ancho_canvas, alto_canvas)
         self._nueva_partida()
 
-    def _construir_layout(self, ancho_canvas, alto_canvas):
+    def _construir_layout(self, ancho_canvas, alto_canvas): 
+        # Construye el layout de la pantalla de partida: panel lateral, canvas del mapa y log.
         contenedor = tk.Frame(self.ventana, bg=COLOR_FONDO)
         contenedor.pack(padx=10, pady=10)
 
@@ -2087,7 +2145,7 @@ class PantallaPartida:
         self.texto_log = tk.Text(panel_log, width=26, bg=COLOR_PIEDRA, fg=COLOR_TEXTO, font=("Courier", 8), state="disabled")
         self.texto_log.pack(fill="both", expand=True)
 
-    def _seccion(self, panel, titulo):
+    def _seccion(self, panel, titulo): # Agrega un título de sección en el panel lateral, con estilo consistente.
         tk.Label(panel, text=titulo, bg=COLOR_PIEDRA, fg=COLOR_ORO,font=("Courier", 9, "bold")).pack(anchor="w", padx=10, pady=(12, 4))
 
     def _agregar_item(self, panel, texto, valor, color):
@@ -2100,15 +2158,16 @@ class PantallaPartida:
         self.items.append((item, valor))
         return item
 
-    def _seleccionar(self, valor):
+    def _seleccionar(self, valor): 
+        # Marca la herramienta seleccionada en el panel lateral y actualiza la barra de estado.
         self.herramienta_actual = valor
         for item, v in self.items:
             item.marcar(v == valor)
         self._actualizar_barra()
 
-    # ── Gestión de partida ──
+    # Inicia una nueva partida, reseteando el mapa, el motor de combate y el log.
 
-    def _nueva_partida(self):
+    def _nueva_partida(self): # Inicia una nueva partida, reseteando el mapa, el motor de combate y el log.
         self.fase = "defensor"
         faccion_def = gestor.obtener_faccion(jugadores[self.roles["defensor"]]["nombre"]) or "Medieval"
         faccion_atk = gestor.obtener_faccion(jugadores[self.roles["atacante"]]["nombre"]) or "Medieval"
@@ -2125,6 +2184,8 @@ class PantallaPartida:
         self._actualizar_barra()
 
     def _limpiar(self):
+         # Limpia el mapa y devuelve el dinero de las piezas colocadas al jugador correspondiente
+         #  según la fase actual.
         total = 0
         for pieza in list(self.mapa.ocupantes.values()):
             if self.fase == "defensor" and not isinstance(pieza, (Torre, Muro, BaseCentral)):
@@ -2148,7 +2209,7 @@ class PantallaPartida:
         self._log(f"🗑 Mapa limpiado — se devuelven ${total}")
         self._actualizar_barra()
 
-    def _accion_fase(self):
+    def _accion_fase(self): # Cambia la fase del juego: de defensor a atacante, o de atacante a combate.
         if self.fase == "defensor":
             if not self.mapa.base_colocada:
                 self._log("⚠ Debés colocar la Base Central antes de continuar.")
@@ -2169,7 +2230,8 @@ class PantallaPartida:
             self._log("⚔ ¡Combate iniciado!")
             self._siguiente_turno()
 
-    def _siguiente_turno(self):
+    def _siguiente_turno(self): 
+        # Ejecuta un turno de combate y procesa los eventos ocurridos, actualizando el log y la barra de estado.
         if not self.mapa.unidades:
             self._log("⚠ No hay unidades en el mapa.")
             return
@@ -2205,7 +2267,8 @@ class PantallaPartida:
         # Turno siguiente automático en 800 ms
         self.ventana.after(1500, self._siguiente_turno)
 
-    def _actualizar_panel_por_fase(self):
+    def _actualizar_panel_por_fase(self): 
+        # Actualiza la visibilidad de los items del panel lateral según la fase actual del juego.
         for item, valor in self.items:
             es_estructura = valor in (TorreVigia, TorreCanon, TorreSanadora, Muro, BaseCentral)
             if self.fase == "defensor":
@@ -2240,10 +2303,11 @@ class PantallaPartida:
         self.btn_accion.config(state="normal",text="Ver resultados  ►",fg=COLOR_ORO,command=_ir_a_resultados)
     
     def _volver_menu(self):
+         # Vuelve al menú principal, deteniendo la música de juego.
         self.ventana.geometry("900x620")
         self.ir_a_menu()
 
-    # ── Clicks ──
+    # Controladores de eventos de click en el canvas
 
     def _click_izquierdo(self, evento):
         if self.fase == "combate":
@@ -2317,7 +2381,8 @@ class PantallaPartida:
         self._actualizar_barra()
         self._log(f"✔ {msg}")
 
-    def _click_derecho(self, evento):
+    def _click_derecho(self, evento): 
+        # Maneja el click derecho para borrar una pieza del mapa y devolver su costo al jugador correspondiente.
         if self.fase == "combate":
             return
         celda = self.mapa.celda_desde_click(evento.x, evento.y)
@@ -2347,9 +2412,11 @@ class PantallaPartida:
             self.mapa.dibujar()
             self._actualizar_barra()
 
-    # ── Utilidades ──
+    # Actualización de la barra de estado y log
 
-    def _actualizar_barra(self):
+    def _actualizar_barra(self): 
+        # Actualiza la barra de estado con información sobre torres, muros, unidades,
+        #  selección actual y vida de la base.
         torres, muros, unidades = self.mapa.contar()
         nombre = self.nombres.get(self.herramienta_actual, "Ninguna")
         self.barra_estado.config(
@@ -2371,23 +2438,25 @@ class PantallaPartida:
         else:
             self.barra_habilidades.config(text="")
 
-    def _log(self, mensaje):
+    def _log(self, mensaje): # Agrega un mensaje al log de la partida, permitiendo ver el historial de eventos.
         self.texto_log.config(state="normal")
         self.texto_log.insert("end", mensaje + "\n")
         self.texto_log.see("end")
         self.texto_log.config(state="disabled")
 
-    def _limpiar_log(self):
+    def _limpiar_log(self): # Limpia el log de la partida, eliminando todos los mensajes previos.
         self.texto_log.config(state="normal")
         self.texto_log.delete("1.0", "end")
         self.texto_log.config(state="disabled")
 
     def _alternar_musica_juego(self):
+         # Alterna la reproducción de música de juego y actualiza el texto del botón correspondiente.
         self.utils.alternar_musica(self.estado_musica)
         nuevo_texto = "▶  Reanudar música" if not self.estado_musica["activa"] else "🔇  Silenciar música"
         self.btn_musica_juego.config(text=nuevo_texto)
 
 #Pantalla que muestra los resultados de las rondas
+
 class PantallaResultadoRonda:
     """Pantalla intermedia entre rondas: muestra quién ganó y el marcador."""
 
@@ -2406,7 +2475,7 @@ class PantallaResultadoRonda:
         self.billetera_def = billetera_def
         self.billetera_atk = billetera_atk
 
-    def mostrar(self):
+    def mostrar(self): # Muestra la pantalla de resultados de la ronda, indicando quién ganó y el marcador actual.
         for widget in self.ventana.winfo_children():
             widget.destroy()
         self.ventana.geometry("900x620")
@@ -2444,7 +2513,7 @@ class PantallaResultadoRonda:
 
         tk.Label(self.ventana,text=f"🛡  {n1}   {s1}  —  {s2}   {n2}  ⚔",bg=COLOR_PIEDRA, fg=COLOR_TEXTO,font=("Georgia", 18, "bold")).place(relx=0.5, y=318, anchor="center")
 
-        # ── Botones ──
+        # Botones de acción según si la partida terminó o no
         if partida_terminada:
             # Ganador global
             ganador_partida_num = max(self.score, key=self.score.get)
@@ -2502,7 +2571,7 @@ def ir_a_login_jugador1():
     pantalla = PantallaLogin(ventana, utils, gestor, 1, ir_a_login_jugador2)
     pantalla.mostrar()
 
-def ir_a_login_jugador2(usuario1):
+def ir_a_login_jugador2(usuario1): # Se llama después de que el primer jugador inicia sesión correctamente
     global jugadores
     jugadores[1] = usuario1
     pantalla = PantallaLogin(ventana, utils, gestor, 2, ir_a_menu,nombre_excluido=usuario1["nombre"])
@@ -2534,13 +2603,16 @@ def _jugador_sin_faccion():
             return numero
     return None
 
-def ir_a_partida(roles, score=None, ronda=1, billetera_def=None, billetera_atk=None):
+def ir_a_partida(roles, score=None, ronda=1, billetera_def=None, billetera_atk=None): 
+    # Muestra la pantalla de partida con los roles asignados y el marcador actual.
     if score is None:
         score = {1: 0, 2: 0}
     pantalla = PantallaPartida(ventana, utils, jugadores, roles, estado_musica,ir_a_menu_actual, gestor, score=score, ronda=ronda,al_terminar_ronda=_al_terminar_ronda,billetera_def=billetera_def,billetera_atk=billetera_atk)
     pantalla.mostrar()
 
 def _al_terminar_ronda(roles, ganador_num, score, ronda, billetera_def, billetera_atk):
+     # Se llama al terminar una ronda para mostrar la pantalla de resultados
+     #  y decidir si continuar o terminar la partida.
     pantalla = PantallaResultadoRonda(
         ventana, utils, jugadores, roles, ganador_num,
         score, ronda, ir_a_menu_actual, _siguiente_ronda,
@@ -2549,7 +2621,8 @@ def _al_terminar_ronda(roles, ganador_num, score, ronda, billetera_def, billeter
     )
     pantalla.mostrar()
 
-def _siguiente_ronda(roles_anteriores, score, ronda, billetera_def, billetera_atk):
+def _siguiente_ronda(roles_anteriores, score, ronda, billetera_def, billetera_atk): 
+    # Se llama al presionar el botón de "JUGAR RONDA X" en la pantalla de resultados de ronda.
     roles_nuevos = {
         "defensor": roles_anteriores["atacante"],
         "atacante": roles_anteriores["defensor"]}
