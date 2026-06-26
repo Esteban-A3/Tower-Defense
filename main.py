@@ -2040,9 +2040,6 @@ class PantallaPartida:
         self._seccion(panel, "HERRAMIENTAS")
         self._item_borrar = self._agregar_item(panel, "Borrar", "borrar", COLOR_SANGRE)
 
-        tk.Button(panel, text="🗑  Limpiar mapa", command=self._limpiar, bg=COLOR_PIEDRA, fg=COLOR_TEXTO, relief=tk.FLAT,font=("Courier", 9)).pack(fill="x", padx=10, pady=(10, 4))
-
-
 
         self.btn_limpiar = tk.Button(panel, text="🗑  Limpiar mapa", command=self._limpiar, bg=COLOR_PIEDRA, fg=COLOR_TEXTO, relief=tk.FLAT, font=("Courier", 9))
         self.btn_limpiar.pack(fill="x", padx=10, pady=(10, 4))
