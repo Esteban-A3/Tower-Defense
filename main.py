@@ -2002,8 +2002,8 @@ class PantallaPartida:
         # La partida necesita más espacio que 900x620; la ampliamos temporalmente
         ancho_canvas = MapaJuego.MARGEN * 2 + MapaJuego.COLUMNAS * MapaJuego.TAM_CELDA
         alto_canvas  = MapaJuego.MARGEN * 2 + MapaJuego.FILAS    * MapaJuego.TAM_CELDA
-        ancho_total  = 240 + ancho_canvas + 20   # panel + mapa + margen
-        alto_total   = alto_canvas + 160          # mapa + log
+        alto_total   = alto_canvas                # sin log abajo
+        ancho_total  = 240 + ancho_canvas + 20 + 220   # + columna del log
 
         self.ventana.geometry(f"{ancho_total}x{alto_total}")
 
@@ -2053,17 +2053,22 @@ class PantallaPartida:
         self.canvas.bind("<Button-1>", self._click_izquierdo)
         self.canvas.bind("<Button-3>", self._click_derecho)
 
+        
+        # Columna derecha — log
+        panel_log = tk.Frame(contenedor, bg=COLOR_FONDO, width=200)
+        panel_log.grid(row=0, column=2, sticky="ns", padx=(10, 0))
+
         # Barra de estado
-        self.barra_estado = tk.Label(self.ventana, text="", bg=COLOR_PIEDRA,fg=COLOR_TEXTO, font=("Courier", 9),anchor="w", justify="left")
-        self.barra_estado.pack(fill="x", padx=10, pady=(0, 4))
+        self.barra_estado = tk.Label(panel_log, text="", bg=COLOR_PIEDRA, fg=COLOR_TEXTO, font=("Courier", 9), anchor="w", justify="left", wraplength=190)
+        self.barra_estado.pack(fill="x", pady=(0, 4))
 
-        self.barra_habilidades = tk.Label(self.ventana, text="", bg=COLOR_PIEDRA, fg=COLOR_ORO, font=("Courier", 8), anchor="w")
-        self.barra_habilidades.pack(fill="x", padx=10, pady=(0, 4))
+        self.barra_habilidades = tk.Label(panel_log, text="", bg=COLOR_PIEDRA, fg=COLOR_ORO, font=("Courier", 8), anchor="w", wraplength=190)
+        self.barra_habilidades.pack(fill="x", pady=(0, 4))
 
-        tk.Label(self.ventana, text="Registro:", bg=COLOR_FONDO,fg=COLOR_TEXTO_TENUE, font=("Courier", 8)).pack(anchor="w", padx=10)
+        tk.Label(panel_log, text="Registro:", bg=COLOR_FONDO, fg=COLOR_TEXTO_TENUE, font=("Courier", 8)).pack(anchor="w")
 
-        self.texto_log = tk.Text(self.ventana, height=6, bg=COLOR_PIEDRA,fg=COLOR_TEXTO, font=("Courier", 8),state="disabled")
-        self.texto_log.pack(fill="x", padx=10, pady=(0, 10))
+        self.texto_log = tk.Text(panel_log, width=26, bg=COLOR_PIEDRA, fg=COLOR_TEXTO, font=("Courier", 8), state="disabled")
+        self.texto_log.pack(fill="both", expand=True)
 
     def _seccion(self, panel, titulo):
         tk.Label(panel, text=titulo, bg=COLOR_PIEDRA, fg=COLOR_ORO,font=("Courier", 9, "bold")).pack(anchor="w", padx=10, pady=(12, 4))
