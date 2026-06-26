@@ -1069,6 +1069,66 @@ class PantallaRoles: # Pantalla de sorteo de roles para la Ronda 1
         roles = {"defensor": self.numero_defensor, "atacante": self.numero_atacante}
         self.ir_continuar(roles)
 
+class PantallaFaccionesIguales:
+    """
+    Pantalla de advertencia que se muestra cuando ambos jugadores
+    pertenecen a la misma facción. Les impide jugar entre sí y les
+    ofrece ir a su cuenta para cambiar de facción o volver al menú.
+    """
+
+    def __init__(self, ventana, utils, jugadores, ir_a_menu, ir_a_cuenta):
+        self.ventana    = ventana
+        self.utils      = utils
+        self.jugadores  = jugadores
+        self.ir_a_menu  = ir_a_menu
+        self.ir_a_cuenta = ir_a_cuenta
+
+    def mostrar(self):
+        # Limpia la ventana y construye la pantalla de advertencia
+        for widget in self.ventana.winfo_children():
+            widget.destroy()
+        self.ventana.geometry("900x620")
+
+        ancho, alto = 900, 620
+        canvas = tk.Canvas(self.ventana, width=ancho, height=alto,bg=COLOR_FONDO, highlightthickness=0)
+        canvas.place(x=0, y=0)
+        self.utils.dibujar_fondo_piedra(canvas, ancho, alto)
+        canvas.create_rectangle(0, 0, ancho, alto,fill=COLOR_FONDO, stipple="gray50", outline="")
+        self.utils.borde_dorado(canvas, ancho, alto)
+
+        # Icono y título de advertencia
+        tk.Label(self.ventana, text="⚔  HONOR DE FACCIÓN  ⚔",bg=COLOR_FONDO, fg=COLOR_SANGRE,font=("Georgia", 26, "bold")).place(relx=0.5, y=90, anchor="center")
+
+        tk.Label(self.ventana, text="━━━━━━━  ✦  ━━━━━━━",bg=COLOR_FONDO, fg=COLOR_SEPARADOR,font=("Courier", 12)).place(relx=0.5, y=130, anchor="center")
+
+        # Obtener nombre de la facción común
+        nombre1   = self.jugadores[1]["nombre"]
+        nombre2   = self.jugadores[2]["nombre"]
+        faccion   = self.jugadores[1].get("faccion", "su facción")
+
+        # Mensaje principal
+        tk.Label(self.ventana,text=f"¡{nombre1} y {nombre2} pertenecen a la misma facción!",bg=COLOR_FONDO, fg=COLOR_ORO_BRILLANTE,font=("Georgia", 15, "bold")).place(relx=0.5, y=190, anchor="center")
+
+        # Explicación del sistema de facciones
+        mensaje = (
+            f"Los guerreros de {faccion} no pueden levantar\n"
+            "la espada contra sus propios hermanos de armas.\n\n"
+            "Para enfrentarse, uno de los dos debe cambiar\n"
+            "de facción desde su perfil de cuenta."
+        )
+        tk.Label(self.ventana, text=mensaje,bg=COLOR_FONDO, fg=COLOR_TEXTO,font=("Courier", 12), justify="center",wraplength=600).place(relx=0.5, y=320, anchor="center")
+
+        tk.Label(self.ventana, text="━━━━━━━  ✦  ━━━━━━━",bg=COLOR_FONDO, fg=COLOR_SEPARADOR,font=("Courier", 12)).place(relx=0.5, y=420, anchor="center")
+
+        # Botón para ir a cuenta (cambiar facción)
+        self.utils.boton_medieval(self.ventana, "👤  Ir a mi cuenta  →",self.ir_a_cuenta,COLOR_ORO).place(relx=0.5, y=475, anchor="center")
+
+        # Botón para volver al menú
+        self.utils.boton_medieval(self.ventana,"←  Volver al menú",self.ir_a_menu, COLOR_TEXTO).place(relx=0.5, y=525, anchor="center")
+
+        # Pie de página
+        tk.Label(self.ventana, text="ITCR  ·  Introducción a la Programación  ·  2026",bg=COLOR_FONDO, fg=COLOR_TEXTO_TENUE,font=FUENTE_PEQUENA).place(relx=0.5, rely=0.97, anchor="center")
+
 # CLASES DE JUEGO — ESTRUCTURAS, TROPAS, BASE Y MAPA
 
 # ESTRUCTURAS
@@ -1174,8 +1234,7 @@ class TorreCanon(Torre):
             total_infligido    += daño_real
         contexto["log"] = (f"{self.nombre} dispara explosión: {daño_area} dmg "
                            f"a {len(unidades)} unidad(es), total {total_infligido}")
-
-        
+     
 class TorreSanadora(Torre):
     """Torre de soporte: cura torres aliadas cada turno y pulso masivo cada 5."""
     CURACION_POR_TURNO = 5
@@ -1210,8 +1269,7 @@ class TorreSanadora(Torre):
             torre.curar(self.CURACION_HABILIDAD)
         contexto["log"] = (f"{self.nombre} lanza pulso de curación: "
                            f"+{self.CURACION_HABILIDAD} vida a {len(torres_curadas)} torre(s)")
-
-        
+      
 class Muro: 
     """Obstáculo físico sin capacidad de ataque."""
     VIDA_MAXIMA = 60
@@ -1792,9 +1850,7 @@ class MotorCombate:
             return "defensor"
         return None
 
-# -----------------------------------------------------------
 # WIDGET DE ITEM DEL PANEL
-# -----------------------------------------------------------
 class ItemHerramienta(tk.Frame):
     """Botón del panel lateral: muestra color + nombre y se resalta al seleccionarse."""
 
@@ -2593,6 +2649,11 @@ def ir_a_jugar():
         pantalla = PantallaFaccion(ventana, utils, gestor, jugadores, falta,ir_a_jugar, forzado=True)
         pantalla.mostrar()
         return
+    # Verifica que los jugadores no sean de la misma facción
+    if _misma_faccion():
+        pantalla = PantallaFaccionesIguales(ventana, utils, jugadores, ir_a_menu_actual, ir_a_cuenta)
+        pantalla.mostrar()
+        return
     pantalla = PantallaRoles(ventana, utils, jugadores, ir_a_menu_actual, ir_a_partida)
     pantalla.mostrar()
 
@@ -2602,6 +2663,12 @@ def _jugador_sin_faccion():
         if not gestor.obtener_faccion(jugadores[numero]["nombre"]):
             return numero
     return None
+
+def _misma_faccion():
+    # Retorna True si ambos jugadores pertenecen a la misma facción
+    faccion1 = gestor.obtener_faccion(jugadores[1]["nombre"])
+    faccion2 = gestor.obtener_faccion(jugadores[2]["nombre"])
+    return faccion1 and faccion2 and faccion1 == faccion2
 
 def ir_a_partida(roles, score=None, ronda=1, billetera_def=None, billetera_atk=None): 
     # Muestra la pantalla de partida con los roles asignados y el marcador actual.
