@@ -34,6 +34,7 @@ TOWER-DEFENSE/
 ├── Defensa_y_Asalto.py       ← archivo principal del juego
 ├── usuarios.json              ← base de datos de jugadores (se crea automáticamente)
 ├── README.md
+├── Jugar.bat              ← Ejecutador del juego (recomendado para nuevos usuarios)
 │
 ├── assets/                    ← imágenes de unidades y estructuras por facción
 │   ├── Base Central/
@@ -149,6 +150,7 @@ assets/                Sprites de cada unidad/estructura divididos por facción
 Sound/                 Pistas de música para menú y partida
 Documents/             Documentación técnica y manual de usuario
 README.md              Este archivo
+Jugar.bat              Ejecutador directo del archivo phyton
 ```
 ## Github
 
