@@ -2038,11 +2038,11 @@ class PantallaPartida:
             self._agregar_item(panel, texto, clase, color)
 
         self._seccion(panel, "HERRAMIENTAS")
-        self._agregar_item(panel, "Borrar", "borrar", COLOR_SANGRE)
+        self._item_borrar = self._agregar_item(panel, "Borrar", "borrar", COLOR_SANGRE)
 
         tk.Button(panel, text="🗑  Limpiar mapa", command=self._limpiar, bg=COLOR_PIEDRA, fg=COLOR_TEXTO, relief=tk.FLAT,font=("Courier", 9)).pack(fill="x", padx=10, pady=(10, 4))
 
-        self._agregar_item(panel, "Borrar", "borrar", COLOR_SANGRE)
+
 
         self.btn_limpiar = tk.Button(panel, text="🗑  Limpiar mapa", command=self._limpiar, bg=COLOR_PIEDRA, fg=COLOR_TEXTO, relief=tk.FLAT, font=("Courier", 9))
         self.btn_limpiar.pack(fill="x", padx=10, pady=(10, 4))
@@ -2086,7 +2086,6 @@ class PantallaPartida:
         item = ItemHerramienta(panel, etiqueta, color,lambda v=valor: self._seleccionar(v))
         item.pack(fill="x", padx=10, pady=2)
         self.items.append((item, valor))
-        self._item_borrar = self._agregar_item(panel, "Borrar", "borrar", COLOR_SANGRE)
         return item
 
     def _seleccionar(self, valor):
