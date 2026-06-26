@@ -1420,6 +1420,7 @@ class MapaJuego:
         self._zona_defensa = set()   # se calcula al colocar la base
         self.base_colocada = False
         self.faccion_defensor = faccion_defensor.lower()  # "medieval", "futurista" o "naturaleza"
+        self.faccion_atacante = "medieval"  # se asigna antes de iniciar
         self._imagenes = {}  # cache para que las imágenes no sean destruidas por el garbage collector
 
 
@@ -1562,7 +1563,7 @@ class MapaJuego:
                 objeto = self.ocupantes.get((fila, col))
 
                 if objeto is self.base:
-                    color, etiqueta, imagen = self.COLOR_BASE, "B", None
+                    color, etiqueta, imagen = self.COLOR_BASE, "B", self._cargar_imagen(BaseCentral)
                 elif objeto is not None:
                     color    = self.COLORES.get(type(objeto), "#888888")
                     etiqueta = self.ETIQUETAS.get(type(objeto), "?")
@@ -1590,12 +1591,19 @@ class MapaJuego:
         TorreCanon:    "torre_canon",
         TorreSanadora: "torre_sanadora",
         Muro:          "muro",
+        Soldado:       "soldado",
+        Tanque:        "tanque",
+        UnidadRapida:  "unidadrapida",
+        BaseCentral:   "base_central",
         }
         base_nombre = nombres.get(clase)
         if not base_nombre:
             return None
         # Si ya está cacheada la retorna directo
-        clave = f"{base_nombre}_{self.faccion_defensor}"
+        es_atacante = clase in (Soldado, Tanque, UnidadRapida)
+        faccion = self.faccion_atacante if es_atacante else self.faccion_defensor
+        clave = f"{base_nombre}_{faccion}"
+
         if clave in self._imagenes:
             return self._imagenes[clave]
         # Construye la ruta según la estructura de assets que tenés
@@ -1604,8 +1612,12 @@ class MapaJuego:
         "torre_canon":    "Torre Canon",
         "torre_sanadora": "Torre Sanadora",
         "muro":           "Muros",
+        "soldado":        "Soldado",
+        "tanque":         "Tanque",
+        "unidadrapida":   "Unidad Rapida",
+        "base_central":   "Base Central",
         }[base_nombre]
-        ruta = os.path.join("assets", carpeta, f"{base_nombre}_{self.faccion_defensor}.png")
+        ruta = os.path.join("assets", carpeta, f"{base_nombre}_{faccion}.png")
         if not os.path.exists(ruta):
             return None
         img = tk.PhotoImage(file=ruta)
@@ -2099,7 +2111,9 @@ class PantallaPartida:
     def _nueva_partida(self):
         self.fase = "defensor"
         faccion_def = gestor.obtener_faccion(jugadores[self.roles["defensor"]]["nombre"]) or "Medieval"
+        faccion_atk = gestor.obtener_faccion(jugadores[self.roles["atacante"]]["nombre"]) or "Medieval"
         self.mapa = MapaJuego(self.canvas, faccion_defensor=faccion_def)
+        self.mapa.faccion_atacante = faccion_atk.lower()
         self.motor = MotorCombate(self.mapa, self._log)
         self._limpiar_log()
         num_def = self.roles["defensor"]
