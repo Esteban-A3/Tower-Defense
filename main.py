@@ -2102,9 +2102,19 @@ class PantallaPartida:
     def _limpiar(self):
         total = 0
         for pieza in list(self.mapa.ocupantes.values()):
+            if self.fase == "defensor" and not isinstance(pieza, (Torre, Muro, BaseCentral)):
+                continue
+            if self.fase == "atacante" and not isinstance(pieza, (Soldado, Tanque, UnidadRapida)):
+                continue
             costo = COSTOS.get(type(pieza).__name__, 0)
             total += costo
-        self.mapa.limpiar()
+        for pos, pieza in list(self.mapa.ocupantes.items()):
+            if self.fase == "defensor" and isinstance(pieza, (Torre, Muro, BaseCentral)):
+                self.mapa.quitar(*pos)
+            elif self.fase == "atacante" and isinstance(pieza, (Soldado, Tanque, UnidadRapida)):
+                self.mapa.quitar(*pos)
+
+
         if self.fase == "defensor":
             self.billetera_def.ganar(total)
         else:
@@ -2217,13 +2227,26 @@ class PantallaPartida:
 
         if self.herramienta_actual == "borrar":
             pieza = self.mapa.ocupantes.get(celda)
+            if self.fase == "defensor" and isinstance(pieza, (Soldado, Tanque, UnidadRapida)):
+                return
+            if self.fase == "atacante" and isinstance(pieza, (Torre, Muro, BaseCentral)):
+                return
             if pieza and self.mapa.quitar(*celda):
                 nombre_clase = type(pieza).__name__
                 costo = COSTOS.get(nombre_clase, 0)
                 if self.fase == "defensor":
                     self.billetera_def.ganar(costo)
+                    if isinstance(pieza, BaseCentral):
+                        for pos in list(self.mapa.ocupantes.keys()):
+                            obj = self.mapa.ocupantes.get(pos)
+                            if isinstance(obj, (Torre, Muro)):
+                                self.mapa.quitar(*pos)
+                                self.billetera_def.ganar(COSTOS.get(type(obj).__name__, 0))
                 else:
                     self.billetera_atk.ganar(costo)
+        
+        
+            
             self._log(f"↩ {pieza.nombre} retirado — se devuelven ${costo}")
             self.mapa.dibujar()
             self._actualizar_barra()
@@ -2274,13 +2297,25 @@ class PantallaPartida:
         if not celda:
             return
         pieza = self.mapa.ocupantes.get(celda)
+        if self.fase == "defensor" and isinstance(pieza, (Soldado, Tanque, UnidadRapida)):
+            return
+        if self.fase == "atacante" and isinstance(pieza, (Torre, Muro, BaseCentral)):
+            return
         if pieza and self.mapa.quitar(*celda):
             nombre_clase = type(pieza).__name__
             costo = COSTOS.get(nombre_clase, 0)
             if self.fase == "defensor":
                 self.billetera_def.ganar(costo)
+                if isinstance(pieza, BaseCentral):
+                    for pos in list(self.mapa.ocupantes.keys()):
+                        obj = self.mapa.ocupantes.get(pos)
+                        if isinstance(obj, (Torre, Muro)):
+                            self.mapa.quitar(*pos)
+                            self.billetera_def.ganar(COSTOS.get(type(obj).__name__, 0))
             else:
                 self.billetera_atk.ganar(costo)
+        
+
             self._log(f"↩ {pieza.nombre} retirado — se devuelven ${costo}")
             self.mapa.dibujar()
             self._actualizar_barra()
