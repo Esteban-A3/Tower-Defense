@@ -28,5 +28,17 @@
         "victorias_defensor": 14,
         "victorias_atacante": 0,
         "faccion": "Naturaleza"
+    },
+    "Tester": {
+        "contrasena": "0ffe1abd1a08215353c233d6e009613e95eec4253832a761af28ff37ac5a150c",
+        "victorias_defensor": 3,
+        "victorias_atacante": 2,
+        "faccion": "Futurista"
+    },
+    "Tester2": {
+        "contrasena": "edee29f882543b956620b26d0ee0e7e950399b1c4222f5de05e06425b4c995e9",
+        "victorias_defensor": 1,
+        "victorias_atacante": 0,
+        "faccion": "Futurista"
     }
 }

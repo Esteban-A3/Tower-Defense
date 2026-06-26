@@ -1069,18 +1069,14 @@ class PantallaRoles: # Pantalla de sorteo de roles para la Ronda 1
         roles = {"defensor": self.numero_defensor, "atacante": self.numero_atacante}
         self.ir_continuar(roles)
 
-# ===========================================================
-#Arreglar comentarios desde aqui
 # CLASES DE JUEGO — ESTRUCTURAS, TROPAS, BASE Y MAPA
-# ===========================================================
 
-# -----------------------------------------------------------
 # ESTRUCTURAS
-# -----------------------------------------------------------
+
 class Torre(ABC):
     """Clase abstracta base para todas las torres defensoras."""
 
-    def __init__(self, nombre, vida_maxima, daño, alcance,
+    def __init__(self, nombre, vida_maxima, daño, alcance, 
                  costo, turnos_para_habilidad):
         self.nombre               = nombre
         self.vida_maxima          = vida_maxima
@@ -1093,45 +1089,50 @@ class Torre(ABC):
         self.fila                 = None
         self.columna              = None
 
-    def atacar(self, objetivo):
+    def atacar(self, objetivo): # Inflige daño a un objetivo si está vivo y devuelve la cantidad de daño infligido
         if not self.esta_viva():
             return 0
         daño_infligido = min(self.daño, objetivo.vida_actual)
         objetivo.vida_actual -= daño_infligido
-        return daño_infligido
+        return daño_infligido 
 
-    def puede_atacar_a(self, fila_objetivo, columna_objetivo):
+    def puede_atacar_a(self, fila_objetivo, columna_objetivo): 
+        # Verifica si un objetivo está dentro del alcance de la torre
         if self.fila is None or self.columna is None:
             return False
         distancia = max(abs(self.fila - fila_objetivo),
                         abs(self.columna - columna_objetivo))
         return distancia <= self.alcance
 
-    def avanzar_turno(self, contexto):
+    def avanzar_turno(self, contexto): # Avanza el turno de la torre y activa su habilidad si corresponde
         self._turno_actual += 1
         if self._turno_actual >= self.turnos_para_habilidad:
             self.activar_habilidad(contexto)
             self._turno_actual = 0
 
     @abstractmethod
-    def activar_habilidad(self, contexto):
+    def activar_habilidad(self, contexto): 
+        # Método abstracto que debe ser implementado por cada tipo de torre para definir su habilidad especial
         pass
 
-    def esta_viva(self):
+    def esta_viva(self): # Verifica si la torre aún tiene vida y puede seguir funcionando
         return self.vida_actual > 0
 
-    def recibir_daño(self, cantidad):
+    def recibir_daño(self, cantidad): 
+        # Reduce la vida actual de la torre al recibir daño, asegurando que no sea menor a cero
         self.vida_actual = max(0, self.vida_actual - cantidad)
 
-    def curar(self, cantidad):
+    def curar(self, cantidad): 
+        # Aumenta la vida actual de la torre al recibir curación, asegurando que no supere la vida máxima
         self.vida_actual = min(self.vida_maxima, self.vida_actual + cantidad)
 
     def resumen(self):
+        # Devuelve un resumen de la torre con su nombre, vida actual y máxima, daño, alcance y estado de la habilidad
         return (f"[{self.nombre}] Vida: {self.vida_actual}/{self.vida_maxima} | "
                 f"Daño: {self.daño} | Alcance: {self.alcance} | "
                 f"Turno habilidad: {self._turno_actual}/{self.turnos_para_habilidad}")
 
-    def __repr__(self):
+    def __repr__(self): # Devuelve una representación de la torre con su nombre, estado (viva o destruida) y vida actual 
         estado = "viva" if self.esta_viva() else "destruida"
         return f"{self.nombre}({estado}, {self.vida_actual}hp)"
     
@@ -1140,10 +1141,10 @@ class TorreVigia(Torre):
     STATS = {"vida_maxima": 40, "daño": 8, "alcance": 2,
              "costo": 0, "turnos_para_habilidad": 5}
 
-    def __init__(self):
+    def __init__(self): # Inicializa la torre vigía con sus estadísticas específicas
         super().__init__(nombre="Torre Vigía", **self.STATS)
 
-    def activar_habilidad(self, contexto):
+    def activar_habilidad(self, contexto): 
         unidades = contexto.get("unidades_en_rango", [])
         if not unidades:
             return
@@ -1152,15 +1153,16 @@ class TorreVigia(Torre):
         segundo_golpe = self.atacar(objetivo)
         contexto["log"] = (f"{self.nombre} dispara doble sobre {objetivo.nombre}: "
                            f"{primer_golpe} + {segundo_golpe} de daño")
+
 class TorreCanon(Torre):
     """Torre pesada: disparo de área cada 4 turnos."""
     STATS = {"vida_maxima": 85, "daño": 25, "alcance": 3,
              "costo": 0, "turnos_para_habilidad": 6}
 
-    def __init__(self):
+    def __init__(self): # Inicializa la torre cañón con sus estadísticas específicas
         super().__init__(nombre="Torre Cañón", **self.STATS)
 
-    def activar_habilidad(self, contexto):
+    def activar_habilidad(self, contexto): # Inflige daño de área a todas las unidades enemigas en rango, reduciendo su vida actual y registrando el total de daño infligido
         unidades = contexto.get("unidades_en_rango", [])
         if not unidades:
             return
@@ -1172,6 +1174,8 @@ class TorreCanon(Torre):
             total_infligido    += daño_real
         contexto["log"] = (f"{self.nombre} dispara explosión: {daño_area} dmg "
                            f"a {len(unidades)} unidad(es), total {total_infligido}")
+
+        
 class TorreSanadora(Torre):
     """Torre de soporte: cura torres aliadas cada turno y pulso masivo cada 5."""
     CURACION_POR_TURNO = 5
@@ -1179,13 +1183,14 @@ class TorreSanadora(Torre):
     STATS = {"vida_maxima": 35, "daño": 0, "alcance": 2,
              "costo": 0, "turnos_para_habilidad": 7}
 
-    def __init__(self):
+    def __init__(self): # Inicializa la torre sanadora con sus estadísticas específicas
         super().__init__(nombre="Torre Sanadora", **self.STATS)
 
-    def atacar(self, objetivo):
+    def atacar(self, objetivo): # La torre sanadora no inflige daño, por lo que este método siempre devuelve 0
         return 0
 
     def avanzar_turno(self, contexto):
+        # Cada turno, la torre sanadora cura a la torre aliada más dañada dentro de su alcance, si es que hay alguna. Luego, llama al método avanzar_turno de la clase base para manejar la habilidad especial.
         torres_cercanas = contexto.get("torres_cercanas", [])
         if torres_cercanas:
             torre_dañada = min(torres_cercanas, key=lambda t: t.vida_actual)
@@ -1193,7 +1198,8 @@ class TorreSanadora(Torre):
                 torre_dañada.curar(self.CURACION_POR_TURNO)
         super().avanzar_turno(contexto)
 
-    def activar_habilidad(self, contexto):
+    def activar_habilidad(self, contexto): 
+        # La habilidad especial de la torre sanadora cura a todas las torres aliadas cercanas que estén dañadas. Si no hay torres dañadas, se registra un mensaje en el contexto.
         torres_cercanas = contexto.get("torres_cercanas", [])
         torres_curadas  = [t for t in torres_cercanas
                            if t.vida_actual < t.vida_maxima]
@@ -1204,6 +1210,8 @@ class TorreSanadora(Torre):
             torre.curar(self.CURACION_HABILIDAD)
         contexto["log"] = (f"{self.nombre} lanza pulso de curación: "
                            f"+{self.CURACION_HABILIDAD} vida a {len(torres_curadas)} torre(s)")
+
+        
 class Muro:
     """Obstáculo físico sin capacidad de ataque."""
     VIDA_MAXIMA = 60
@@ -1217,7 +1225,7 @@ class Muro:
         self.fila        = None
         self.columna     = None
 
-    def recibir_daño(self, cantidad):
+    def recibir_daño(self, cantidad): # Reduce la vida actual del muro al recibir daño, asegurando que no sea menor a cero
         self.vida_actual = max(0, self.vida_actual - cantidad)
 
     def esta_vivo(self):
@@ -1227,16 +1235,16 @@ class Muro:
     def esta_viva(self):
         return self.esta_vivo()
 
-    def resumen(self):
+    def resumen(self): # Estado del muro
         return f"[Muro] Vida: {self.vida_actual}/{self.vida_maxima}"
 
     def __repr__(self):
         estado = "en pie" if self.esta_vivo() else "destruido"
         return f"Muro({estado}, {self.vida_actual}hp)"
 
-# -----------------------------------------------------------
-# BASE CENTRAL
-# -----------------------------------------------------------
+
+# Base Central
+
 class BaseCentral:
     """Estructura central del defensor. Su destrucción = victoria del atacante."""
     VIDA_MAXIMA = 200
@@ -1247,7 +1255,7 @@ class BaseCentral:
         self.vida_actual = self.VIDA_MAXIMA
         self.celdas      = []
 
-    def recibir_daño(self, cantidad):
+    def recibir_daño(self, cantidad): 
         daño_real        = min(cantidad, self.vida_actual)
         self.vida_actual -= daño_real
         return daño_real
@@ -1255,7 +1263,7 @@ class BaseCentral:
     def esta_destruida(self):
         return self.vida_actual <= 0
 
-    def esta_viva(self):
+    def esta_viva(self): 
         return self.vida_actual > 0
 
     def porcentaje_vida(self):
@@ -1268,13 +1276,11 @@ class BaseCentral:
         porcentaje = int(self.porcentaje_vida() * 100)
         return f"[{self.nombre}] Vida: {self.vida_actual}/{self.vida_maxima} ({porcentaje}%)"
 
-    def __repr__(self):
+    def __repr__(self): 
         estado = "en pie" if self.esta_viva() else "DESTRUIDA"
         return f"BaseCentral({estado}, {self.vida_actual}hp)"
 
-# -----------------------------------------------------------
-# TROPAS — clase base abstracta
-# -----------------------------------------------------------
+# Tropas 
 class Unidad(ABC):
     """Clase base abstracta para todas las unidades atacantes."""
 
@@ -1348,6 +1354,7 @@ class Soldado(Unidad):
         if objetivo and getattr(objetivo, "vida_actual", 0) > 0:
             self.atacar(objetivo)
             contexto["log"] = f"{self.nombre} usa Ataque Doble"
+
 class Tanque(Unidad):
     """Alta vida, lento, activa escudo temporal cada 4 turnos."""
     STATS = {"vida_maxima": 120, "daño": 18, "velocidad": 1,
@@ -1366,6 +1373,7 @@ class Tanque(Unidad):
             self.escudo_activo = False
             return
         super().recibir_daño(cantidad)
+        
 class UnidadRapida(Unidad):
     """Poco daño, se mueve más rápido y duplica velocidad con habilidad."""
     STATS = {"vida_maxima": 35, "daño": 8, "velocidad": 2,
