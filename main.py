@@ -2042,8 +2042,13 @@ class PantallaPartida:
 
         tk.Button(panel, text="🗑  Limpiar mapa", command=self._limpiar, bg=COLOR_PIEDRA, fg=COLOR_TEXTO, relief=tk.FLAT,font=("Courier", 9)).pack(fill="x", padx=10, pady=(10, 4))
 
-        self.btn_accion = tk.Button(panel, text="✔  Defensor listo",command=self._accion_fase,bg=COLOR_PIEDRA, fg=COLOR_ORO,relief=tk.FLAT, font=("Courier", 9))
-        self.btn_accion.pack(fill="x", padx=10, pady=4)
+        self._agregar_item(panel, "Borrar", "borrar", COLOR_SANGRE)
+
+        self.btn_limpiar = tk.Button(panel, text="🗑  Limpiar mapa", command=self._limpiar, bg=COLOR_PIEDRA, fg=COLOR_TEXTO, relief=tk.FLAT, font=("Courier", 9))
+        self.btn_limpiar.pack(fill="x", padx=10, pady=(10, 4))
+
+        self.btn_musica_juego = tk.Button(panel, text="🔇  Silenciar música",command=self._alternar_musica_juego, bg=COLOR_PIEDRA, fg=COLOR_TEXTO_TENUE,relief=tk.FLAT, font=("Courier", 9))
+        self.btn_musica_juego.pack(fill="x", padx=10, pady=(4, 12))
 
         tk.Button(panel, text="←  Volver al menú", command=self._volver_menu,bg=COLOR_PIEDRA, fg=COLOR_TEXTO, relief=tk.FLAT,font=("Courier", 9)).pack(fill="x", padx=10, pady=(4, 12))
 
@@ -2081,6 +2086,8 @@ class PantallaPartida:
         item = ItemHerramienta(panel, etiqueta, color,lambda v=valor: self._seleccionar(v))
         item.pack(fill="x", padx=10, pady=2)
         self.items.append((item, valor))
+        self._item_borrar = self._agregar_item(panel, "Borrar", "borrar", COLOR_SANGRE)
+        return item
 
     def _seleccionar(self, valor):
         self.herramienta_actual = valor
@@ -2195,6 +2202,8 @@ class PantallaPartida:
                     item.pack_forget()
                 else:
                     item.pack(fill="x", padx=10, pady=2)
+                self.btn_limpiar.pack_forget()
+                self._item_borrar.pack_forget() 
 
     def _registrar_victoria(self, ganador_rol):
         # Score global JSON (victorias históricas por rol)
@@ -2359,6 +2368,11 @@ class PantallaPartida:
         self.texto_log.config(state="normal")
         self.texto_log.delete("1.0", "end")
         self.texto_log.config(state="disabled")
+
+    def _alternar_musica_juego(self):
+        self.utils.alternar_musica(self.estado_musica)
+        nuevo_texto = "▶  Reanudar música" if not self.estado_musica["activa"] else "🔇  Silenciar música"
+        self.btn_musica_juego.config(text=nuevo_texto)
 
 #Pantalla que muestra los resultados de las rondas
 class PantallaResultadoRonda:
