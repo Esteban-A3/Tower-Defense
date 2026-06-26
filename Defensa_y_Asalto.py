@@ -2111,8 +2111,6 @@ class PantallaPartida:
             self.score            = score or {1: 0, 2: 0}
         self.ronda            = ronda
         self.al_terminar_ronda = al_terminar_ronda
-        num_def = roles["defensor"]
-        num_atk = roles["atacante"]
         self.billetera_def = billetera_def if billetera_def else Billetera()
         self.billetera_atk = billetera_atk if billetera_atk else Billetera()
         self.economia = EconomiaController(self.billetera_def, self.billetera_atk)
@@ -2580,10 +2578,8 @@ class PantallaResultadoRonda:
 
         else:
             # Roles invertidos para la próxima ronda
-            nuevo_def = self.roles["atacante"]
-            nuevo_atk = self.roles["defensor"]
-            n_def = self.jugadores[nuevo_def]["nombre"]
-            n_atk = self.jugadores[nuevo_atk]["nombre"]
+            n_def = self.jugadores[self.roles["atacante"]]["nombre"]
+            n_atk = self.jugadores[self.roles["defensor"]]["nombre"]
 
             tk.Label(self.ventana,text=f"Ronda {self.ronda + 1}:  🛡 {n_def}  defiende  ·  {n_atk}  ataca ⚔",bg=COLOR_FONDO, fg=COLOR_TEXTO_TENUE, font=("Courier", 11)).place(relx=0.5, y=415, anchor="center")
 
@@ -2693,8 +2689,8 @@ def _siguiente_ronda(roles_anteriores, score, ronda, billetera_def, billetera_at
     roles_nuevos = {
         "defensor": roles_anteriores["atacante"],
         "atacante": roles_anteriores["defensor"]}
-    billetera_def.ganar(500)
-    billetera_atk.ganar(500)
+    economia_temp = EconomiaController(billetera_def, billetera_atk)
+    economia_temp.iniciar_nueva_ronda()
     ir_a_partida(roles_nuevos, score=score, ronda=ronda + 1,billetera_def=billetera_atk, billetera_atk=billetera_def)
 
 def ir_a_top(): # Muestra la pantalla de ranking de jugadores según victorias
