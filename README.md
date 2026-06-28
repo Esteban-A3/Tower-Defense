@@ -1,4 +1,4 @@
-# ⚔️🛡️ Defensa y Asalto de Base
+# Defensa y Asalto de Base
 
 > Proyecto Final — Introducción a la Programación | ITCR | Primer Semestre 2026
 
@@ -11,7 +11,7 @@
 
 ---
 
-## 📖 Descripción
+## Descripción
 
 *Defensa y Asalto de Base* es un juego de estrategia por turnos para **dos jugadores** desarrollado completamente en Python con Tkinter. Cada jugador elige un rol por ronda: uno **defiende** su base construyendo torres y muros, el otro **ataca** enviando unidades. Gana quien acumule más victorias de ronda.
 
@@ -19,7 +19,7 @@ Incluye sistema de cuentas de usuario, tres facciones jugables, economía por ro
 
 ---
 
-## 🗂️ Estructura del Repositorio
+## Estructura del Repositorio
 
 ```
 TOWER-DEFENSE/
@@ -58,7 +58,7 @@ TOWER-DEFENSE/
 
 ---
 
-## 🌿 Branches
+## Branches
 
 | Rama | Contenido |
 |------|-----------|
@@ -70,22 +70,22 @@ TOWER-DEFENSE/
 
 ---
 
-## ✨ Características
+## Características
 
-- 👥 **Dos jugadores** — cada uno con su propia cuenta registrada
-- 🏰 **3 facciones** — Medieval, Futurista y Naturaleza (deben ser distintas entre jugadores)
-- 🗺️ **Mapa 15×15** — zona verde para defensas, zona roja para unidades
-- 👾 **3 tipos de unidades** — Soldado, Tanque y Unidad Rápida, cada uno con habilidad especial
-- 🏗️ **4 estructuras defensivas** — Torre Vigía, Torre Cañón, Torre Sanadora y Muro
-- 💰 **Sistema económico** — dinero inicial, bonos por ronda, recompensas en combate y bono de presión
-- ⚔️ **Motor de combate automático** — resuelve cada turno sin intervención del jugador
-- 🏆 **Mejor de 5 rondas** — gana quien llegue primero a 3 victorias
-- 🎵 **Música** — pista diferente para menú y partida
-- 💾 **Cuentas persistentes** — usuarios guardados en `usuarios.json` entre sesiones
+-  **Dos jugadores** — cada uno con su propia cuenta registrada
+-  **3 facciones** — Medieval, Futurista y Naturaleza (deben ser distintas entre jugadores)
+-  **Mapa 15×15** — zona verde para defensas, zona roja para unidades
+-  **3 tipos de unidades** — Soldado, Tanque y Unidad Rápida, cada uno con habilidad especial
+-  **4 estructuras defensivas** — Torre Vigía, Torre Cañón, Torre Sanadora y Muro
+-  **Sistema económico** — dinero inicial, bonos por ronda, recompensas en combate y bono de presión
+-  **Motor de combate automático** — resuelve cada turno sin intervención del jugador
+-  **Mejor de 5 rondas** — gana quien llegue primero a 3 victorias
+-  **Música** — pista diferente para menú y partida
+-  **Cuentas persistentes** — usuarios guardados en `usuarios.json` entre sesiones
 
 ---
 
-## ⚙️ Requisitos
+## Requisitos
 
 ```bash
 Python 3.10+
@@ -96,7 +96,7 @@ pip install pygame
 
 ---
 
-## 🚀 Cómo ejecutar
+## Cómo ejecutar
 
 ### Opción A — Archivo de acceso rápido (recomendado)
 Hacé doble clic sobre `Jugar.bat`. El juego abre directamente sin necesidad de abrir ningún código.
@@ -112,7 +112,7 @@ Abrí la carpeta en VS Code, abrí `Defensa_y_Asalto.py` y presioná **F5**.
 
 ---
 
-## 🕹️ Cómo jugar
+## Cómo jugar
 
 ```
 1. Pantalla de inicio     → presioná cualquier tecla
@@ -135,7 +135,7 @@ Abrí la carpeta en VS Code, abrí `Defensa_y_Asalto.py` y presioná **F5**.
 
 ---
 
-## 🧩 Unidades y Estructuras
+## Unidades y Estructuras
 
 ### Unidades atacantes
 
@@ -156,7 +156,7 @@ Abrí la carpeta en VS Code, abrí `Defensa_y_Asalto.py` y presioná **F5**.
 
 ---
 
-## 💰 Sistema Económico
+## Sistema Económico
 
 | Concepto | Valor |
 |----------|-------|
@@ -167,7 +167,7 @@ Abrí la carpeta en VS Code, abrí `Defensa_y_Asalto.py` y presioná **F5**.
 
 ---
 
-## 📋 Notas
+## Notas
 
 - `usuarios.json` se crea automáticamente al registrar el primer usuario. No lo eliminés o perderás las cuentas guardadas.
 - Sin la carpeta `Sound/` el juego funciona igual pero sin audio.
@@ -175,12 +175,12 @@ Abrí la carpeta en VS Code, abrí `Defensa_y_Asalto.py` y presioná **F5**.
 
 ---
 
-## 📎 Documentación
+## Documentación
 
 La documentación completa del proyecto se encuentra en la carpeta `Documents/` y en la rama [`Documentacion-y-seguimiento`](../../tree/Documentacion-y-seguimiento).
 
 ---
 
-## 👥 Autores
+## Autores
 
 **Esteban Sanchez · Dominick Robles** — ITCR, Introducción a la Programación, 2026
