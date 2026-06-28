@@ -1,42 +1,35 @@
-# Defensa y Asalto de Base
+# ⚔️🛡️ Defensa y Asalto de Base
 
-Juego de estrategia por turnos para dos jugadores desarrollado en Python con Tkinter.
-Cada jugador elige un rol por ronda: uno defiende su base construyendo torres y muros,
-el otro ataca enviando unidades. Gana quien acumule más victorias de ronda.
+> Proyecto Final — Introducción a la Programación | ITCR | Primer Semestre 2026
 
----
-
-## Requisitos
-
-- Python **3.10 o superior** (probado en Python 3.14)
-- pip (incluido con Python)
-
-### Dependencias externas
-
-| Librería | Uso |
-|----------|-----|
-| `pygame` | Reproducción de música |
-| `tkinter` | Interfaz gráfica (incluido con Python en Windows) |
-
-> `json`, `hashlib`, `os`, `random` y `abc` son parte de la librería estándar, no requieren instalación.
+![Python](https://img.shields.io/badge/Python-3.10+-blue?style=flat&logo=python)
+![Tkinter](https://img.shields.io/badge/UI-Tkinter-orange?style=flat)
+![Pygame](https://img.shields.io/badge/Audio-Pygame-green?style=flat)
+![Branch](https://img.shields.io/badge/Rama-main-brightgreen?style=flat)
+![Commits](https://img.shields.io/badge/Commits-67-lightgray?style=flat)
+![Proyecto](https://img.shields.io/badge/Proyecto-ITCR-red?style=flat)
 
 ---
 
-##  Instalación
+## 📖 Descripción
 
-### 1. Descomprimir el ZIP
+*Defensa y Asalto de Base* es un juego de estrategia por turnos para **dos jugadores** desarrollado completamente en Python con Tkinter. Cada jugador elige un rol por ronda: uno **defiende** su base construyendo torres y muros, el otro **ataca** enviando unidades. Gana quien acumule más victorias de ronda.
 
-Extraé el archivo en cualquier carpeta. La estructura interna debe quedar así:
+Incluye sistema de cuentas de usuario, tres facciones jugables, economía por ronda, motor de combate automático por turnos y música de fondo.
+
+---
+
+## 🗂️ Estructura del Repositorio
 
 ```
 TOWER-DEFENSE/
 │
-├── Defensa_y_Asalto.py       ← archivo principal del juego
+├── Defensa_y_Asalto.py       ← archivo principal — todo el código del juego
 ├── usuarios.json              ← base de datos de jugadores (se crea automáticamente)
+├── Jugar.bat                  ← ejecutador directo (recomendado para nuevos usuarios)
 ├── README.md
-├── Jugar.bat              ← Ejecutador del juego (recomendado para nuevos usuarios)
 │
-├── assets/                    ← imágenes de unidades y estructuras por facción
+├── assets/                    ← sprites de cada unidad y estructura por facción
 │   ├── Base Central/
 │   ├── Muros/
 │   ├── Soldado/
@@ -47,12 +40,12 @@ TOWER-DEFENSE/
 │   └── Unidad Rapida/
 │
 ├── Sound/                     ← música del juego
-│   ├── in_game/
-│   │   ├── Tower1.mp3
-│   │   ├── Tower2.mp3
-│   │   └── Tower3.mp3
-│   └── Menu/
-│       └── Tower0.mp3
+│   ├── Menu/
+│   │   └── Tower0.mp3
+│   └── in_game/
+│       ├── Tower1.mp3
+│       ├── Tower2.mp3
+│       └── Tower3.mp3
 │
 └── Documents/                 ← documentación del proyecto
     ├── Atributos_Proyecto.pdf
@@ -61,111 +54,133 @@ TOWER-DEFENSE/
     └── Videos.txt
 ```
 
->  No muevas ni renombres ninguna carpeta. El juego usa rutas relativas a su propia ubicación.
+> No muevas ni renombres ninguna carpeta. El juego usa rutas relativas a su propia ubicación.
 
-### 2. Instalar pygame
+---
 
-Abrí una terminal (CMD, PowerShell o Terminal) y ejecutá:
+## 🌿 Branches
+
+| Rama | Contenido |
+|------|-----------|
+| `main` ← *estás aquí* | Código completo y funcional del juego |
+| `Documentacion-y-seguimiento` | Documentación técnica, manual de usuario y videos de seguimiento |
+| `Mapa-y-sistema-de-tienda` | Alfa del juego + primera versión del sistema económico |
+| `Sistema-de-tropas` | Clases iniciales de las unidades atacantes |
+| `Torres` | Clases iniciales de la base central y estructuras defensivas |
+
+---
+
+## ✨ Características
+
+- 👥 **Dos jugadores** — cada uno con su propia cuenta registrada
+- 🏰 **3 facciones** — Medieval, Futurista y Naturaleza (deben ser distintas entre jugadores)
+- 🗺️ **Mapa 15×15** — zona verde para defensas, zona roja para unidades
+- 👾 **3 tipos de unidades** — Soldado, Tanque y Unidad Rápida, cada uno con habilidad especial
+- 🏗️ **4 estructuras defensivas** — Torre Vigía, Torre Cañón, Torre Sanadora y Muro
+- 💰 **Sistema económico** — dinero inicial, bonos por ronda, recompensas en combate y bono de presión
+- ⚔️ **Motor de combate automático** — resuelve cada turno sin intervención del jugador
+- 🏆 **Mejor de 5 rondas** — gana quien llegue primero a 3 victorias
+- 🎵 **Música** — pista diferente para menú y partida
+- 💾 **Cuentas persistentes** — usuarios guardados en `usuarios.json` entre sesiones
+
+---
+
+## ⚙️ Requisitos
 
 ```bash
+Python 3.10+
 pip install pygame
 ```
 
-Si tenés varias versiones de Python instaladas:
-
-```bash
-pip3 install pygame
-```
-
-### 3. Verificar tkinter (solo si hay error)
-
-En Windows tkinter viene incluido con Python. Si al ejecutar el juego aparece un error de `tkinter`, reinstalá Python desde [python.org](https://www.python.org/downloads/) asegurándote de marcar la opción **"tcl/tk and IDLE"** durante la instalación.
+> `tkinter`, `json`, `hashlib`, `os`, `random` y `abc` son parte de la librería estándar — no requieren instalación.
 
 ---
 
-##  Cómo ejecutar el juego
+## 🚀 Cómo ejecutar
 
-### Opción A — Doble clic (Windows)
+### Opción A — Archivo de acceso rápido (recomendado)
+Hacé doble clic sobre `Jugar.bat`. El juego abre directamente sin necesidad de abrir ningún código.
 
-Hacé doble clic sobre el archivo `Defensa_y_Asalto.py`. Si Python está correctamente instalado y asociado a archivos `.py`, el juego abre directamente.
-
-### Opción B — Terminal (recomendado)
-
-1. Abrí una terminal
-2. Navegá hasta la carpeta del juego:
-
+### Opción B — Terminal
 ```bash
 cd ruta/a/TOWER-DEFENSE
-```
-
-3. Ejecutá el juego:
-
-```bash
 python Defensa_y_Asalto.py
 ```
 
-O en sistemas con Python 3 como `python3`:
-
-```bash
-python3 Defensa_y_Asalto.py
-```
-
-### Opción C — Archivo de acceso rápido (recomendado para nuevos usuarios)
-
-1. Asegurate de tener Python y pygame instalados (ver sección de instalación)
-2. En la carpeta del juego encontrarás el archivo `Jugar.bat`
-3. Hacé doble clic sobre él — el juego abre directamente sin necesidad de abrir ningún código
-
-### Opción D — VS Code
-
-1. Abrí la carpeta `TOWER-DEFENSE` en VS Code
-2. Abrí el archivo `Defensa_y_Asalto.py`
-3. Presioná **F5** o el botón ▶ de la esquina superior derecha
+### Opción C — VS Code
+Abrí la carpeta en VS Code, abrí `Defensa_y_Asalto.py` y presioná **F5**.
 
 ---
 
-##  Cómo jugar (resumen rápido)
-
-1. **Pantalla de inicio** — Presioná cualquier tecla para comenzar
-2. **Login** — Cada jugador inicia sesión o crea una cuenta
-3. **Facción** — Cada jugador elige su facción (Medieval, Futurista o Naturaleza). Los dos deben ser de **facciones distintas**
-4. **Menú principal** — Elegí "Jugar" para iniciar una partida
-5. **Sorteo de roles** — El juego asigna aleatoriamente quién defiende y quién ataca en la primera ronda
-6. **Ronda**:
-   - El **defensor** coloca primero la Base Central y luego torres/muros en la zona verde
-   - El **atacante** coloca sus unidades en la zona roja
-   - Se inicia el combate automático por turnos
-7. **Resultados** — Se muestra quién ganó la ronda y el marcador
-8. Los roles se **invierten** en la siguiente ronda
-9. Gana la partida el primero en ganar **3 rondas**
-
----
-
-## Estructura del proyecto
+## 🕹️ Cómo jugar
 
 ```
-Defensa_y_Asalto.py    Código fuente completo (pantallas, lógica, economía, combate)
-usuarios.json          Registro persistente de usuarios, facciones y victorias
-assets/                Sprites de cada unidad/estructura divididos por facción
-Sound/                 Pistas de música para menú y partida
-Documents/             Documentación técnica y manual de usuario
-README.md              Este archivo
-Jugar.bat              Ejecutador directo del archivo phyton
+1. Pantalla de inicio     → presioná cualquier tecla
+2. Login                  → cada jugador inicia sesión o crea una cuenta
+3. Facción                → cada jugador elige su facción (deben ser distintas)
+4. Menú principal         → elegí "Jugar"
+5. Sorteo de roles        → el juego asigna aleatoriamente quién defiende y quién ataca
+         ↓
+   ┌─────────────────────────────────────┐
+   │            RONDA                    │
+   │  Defensor → coloca torres y muros   │
+   │  Atacante → coloca sus unidades     │
+   │  Combate automático por turnos      │
+   └─────────────────────────────────────┘
+         ↓
+6. Resultados             → se muestra quién ganó la ronda y el marcador
+7. Los roles se invierten → nueva ronda con roles cambiados
+8. Victoria               → primer jugador en ganar 3 rondas gana la partida
 ```
-## Github
-
-https://github.com/Esteban-A3/Tower-Defense
 
 ---
 
-## Créditos
+## 🧩 Unidades y Estructuras
 
-Proyecto desarrollado para el curso **Introducción a la Programación — ITCR 2026**.
+### Unidades atacantes
+
+| Unidad | Vida | Daño | Velocidad | Alcance | Habilidad especial |
+|--------|------|------|-----------|---------|-------------------|
+| Soldado | 30 hp | 8 | 1 casilla/turno | 1 | Ataque doble cada 3 turnos |
+| Tanque | 90 hp | 30 | 1 casilla/turno | 1 | Pulso de curación cada 5 turnos + recuperación de emergencia bajo 25% de vida |
+| Unidad Rápida | 18 hp | 5 | 2 casillas/turno | 1 | Aumento de velocidad cada 3 turnos |
+
+### Estructuras defensivas
+
+| Estructura | Rol |
+|------------|-----|
+| Torre Vigía | Cobertura de largo alcance |
+| Torre Cañón | Alto daño en área reducida |
+| Torre Sanadora | Cura torres cercanas durante el combate |
+| Muro | Barrera sin ataque — absorbe daño para proteger las torres |
 
 ---
 
-## Notas adicionales
+## 💰 Sistema Económico
 
-- El archivo `usuarios.json` se crea automáticamente la primera vez que se registra un usuario. No lo eliminés o perderás las cuentas guardadas.
-- La música requiere que la carpeta `Sound/` esté en su lugar. Si no existe, el juego funciona igualmente pero sin audio.
-- Si el juego se ve cortado en pantalla, verificá que la resolución de tu monitor sea al menos **1280×800**.
+| Concepto | Valor |
+|----------|-------|
+| Dinero inicial | $500 por jugador |
+| Bono por ronda | +$150 al inicio de cada ronda (desde ronda 2) |
+| Tope acumulable | $800 — el exceso se descarta |
+| Bono de presión | El atacante recibe el 25% del daño hecho a la base como dinero extra en la siguiente ronda (máx. $200) |
+
+---
+
+## 📋 Notas
+
+- `usuarios.json` se crea automáticamente al registrar el primer usuario. No lo eliminés o perderás las cuentas guardadas.
+- Sin la carpeta `Sound/` el juego funciona igual pero sin audio.
+- Resolución mínima recomendada: **1280×800**.
+
+---
+
+## 📎 Documentación
+
+La documentación completa del proyecto se encuentra en la carpeta `Documents/` y en la rama [`Documentacion-y-seguimiento`](../../tree/Documentacion-y-seguimiento).
+
+---
+
+## 👥 Autores
+
+**Esteban Sanchez · Dominick Robles** — ITCR, Introducción a la Programación, 2026
