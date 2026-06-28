@@ -11,7 +11,6 @@ pygame.mixer.init()
 
 # CONSTANTES Y CONFIGURACIONES
 
-
 #Paleta de colores
 COLOR_FONDO         = "#0d0a07"
 COLOR_PIEDRA        = "#1a1510"
