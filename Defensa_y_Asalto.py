@@ -1110,7 +1110,7 @@ class PantallaFaccionesIguales:
 
         # Explicación del sistema de facciones
         mensaje = (
-            f"Los guerreros de {faccion} no pueden levantar\n"
+            f"Los guerreros no pueden levantar\n"
             "la espada contra sus propios hermanos de armas.\n\n"
             "Para enfrentarse, uno de los dos debe cambiar\n"
             "de facción desde su perfil de cuenta."
